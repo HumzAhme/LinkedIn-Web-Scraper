@@ -1,13 +1,18 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 import requests
 import time
 import re
 import nltk
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 import ssl
-import string
 import time
-from terms import IGNORE
+import os
+from socket import error
+from config import config as CONFIG
+
+# to use your own dataset, change this import to point to your own version of terms.py
+from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
 
 
 # workaround to get nltk to work...
@@ -24,15 +29,10 @@ nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 
-nltk_stop = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
 
-# words to strip without allowing potential analysis.
-# ex: if 'admin' by itself isn't useful, but 'linux admin' is, don't put 'admin' here.
-# instead, put it in the IGNORE list
-my_stop = {
-    'join','level','review','content','builder','detail','liaise','evaluating','make','~','’'
-}
-STOP = nltk_stop.union(my_stop)
+nltk_stop = set(stopwords.words('english'))
+STOP_WORDS = nltk_stop.union(STOP)
 
 # Data to get:
 #
@@ -56,123 +56,13 @@ class classNames:
     # second: employment type (fulltime, contract, etc)
     criteria = 'description__job-criteria-item'
 
-# preferred names for conflated terms
-javascript = 'Javascript'
-typescript = 'Typescript'
-node = 'Node.js'
-react = 'React.js'
-vue = 'Vue.js'
-angular = 'Angular.js'
-golang = 'Go'
-oop = 'OOP'
-frontend = 'front-end'
-backend = 'back-end'
-rails = 'Ruby-on-Rails'
-dotnet = '.NET'
 
-# terms to conflate into a singular preferred form
-# since there are many ways a given concept may be written, we conform
-# them all using this dictionary
-CONFLATE = {
-    # javascript/typescript
-    'js': javascript,
-    'ts': typescript,
-    # react
-    'react': react,
-    'reactjs': react,
-    'react.js': react,
-    # vue
-    'vuejs': vue,
-    'vue': vue,
-    'vue.js': vue,
-    # angular
-    'angular': angular,
-    'angularjs': angular,
-    'angular.js': angular,
-    #node
-    'node': node,
-    'nodejs': node,
-    'node.js': node,
-    # golang
-    'golang': golang,
-    'go.lang': golang,
-    # ruby-on-rails
-    'ruby-on-rails': rails,
-    'ruby on rails': rails,
-    'rails': rails,
-    # .NET
-    '.net': dotnet,
-    '.NET': dotnet,
-    # misc
-    'restful': 'RESTful',
-    'oop': oop,
-    'OOP': oop,
-    'object-oriented': oop,
-    'object-oriented-programming': oop,
-    'object oriented': oop,
-    'object oriented programming': oop,
-    'frontend': frontend,
-    'front-end': frontend,
-    'backend': backend,
-    'back-end': backend
-}
-
-# phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
-PHRASES = [
-    'back end',
-    'front end',
-    'object oriented',
-    'ruby on rails',
-    'site reliability',
-    'machine learning',
-    'data mining',
-    'artificial intelligence',
-    'data analysis',
-    'unit test',
-    'computer science',
-    'bachelor degree',
-    "batchelors degree",
-    'master degree',
-    "masters degree",
-    'system administrator',
-    'full stack',
-    'team lead',
-    'senior engineer',
-    'senior developer',
-    'junior engineer',
-    'junior developer',
-    'web developer',
-    'application developer',
-    'application engineer',
-    'mobile developer',
-    'google cloud platform',
-    'amazon web service',
-    'rest api',
-    'rest apis',
-    'system engineer'
-]
-
-
+# You can change the search criteria here
 KEYWORD = 'Software Developer'
 LOCATION = 'Tokyo, Japan'
 
-SEARCH_URL = 'https://www.linkedin.com/jobs/search/?keywords={0}&location={1}&start={2}'
+SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={0}&location={1}&start={2}'
 JOB_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'
-
-#nltk.download('words')
-#WORDS = set(nltk.corpus.words.words())
-
-# tech words we want to make sure aren't ignored or stripped by NLTK logic by accident
-# our logic ideally allows any noun-like terms (that aren't stop words/ignored) to go through
-# but sometimes weird things happen, so just to be safe I am listing popular terms or ones that may potentially be erroneously ignored.
-TECH_WORDS = {
-    'react','react.js','assembly','git','cloud','angular','angular.js','c#','c++','mobile','android','ios','oop','object-oriented',
-    'node','node.js','restful','go','golang','.net','linux','unix','macos','windows','web3','github','nosql','mysql','sql','aws','gcp',
-    'bash','kernel'
-}
-
-# misc words to ignore - mostly random tech terms and corporate speak that may commonly appear in JDs
-
 
 
 def scrapeLinkedIn():
@@ -185,18 +75,23 @@ def scrapeLinkedIn():
         retry = 5
         time.sleep(2)
 
-        print('Some jobs ({}/{}) failed. Do you want to retry them?'.format(len(skipped_jobs), len(jobIDs)))
-        print('(Note: this code will retry {} times, or until no more skipped jobs are getting resolved)'.format(retry))
-        ans = input('Y/N: ')
-        if (ans.lower() != 'y'):
-            return
-        
+        print('Attempting to resolve skipped jobs. Will attempt up to {} times.'.format(retry))
+        no_change = 0
+
         for i in range(retry):
+            if (i > 0):
+                print('restart!')
+            print('iteration {}/{}'.format(i+1, retry))
+            time.sleep(0.5)
             last_skipped_count = len(skipped_jobs)
             (skip_years_exp, skip_keywords, skipped_jobs) = mainWorkflow(skipped_jobs)
             if (last_skipped_count == len(skipped_jobs)):
-                print('ending retry process at iteration {}; no skipped jobs were resolved since last iteration ({}).'.format(i+1,last_skipped_count))
-                break
+                no_change += 1
+                if (no_change >= 2):
+                    print("ending retry process at iteration {} since skipped jobs remains at {}.".format(i+1,last_skipped_count))
+                    break
+            else:
+                no_change = 0
             # merge the years-of-experience dictionaries
             for year in skip_years_exp:
                 if year in years_of_exp:
@@ -206,11 +101,11 @@ def scrapeLinkedIn():
             keywords_list = keywords_list + skip_keywords
             print('pausing...')
             time.sleep(5)
-            print('restart!')
-            time.sleep(0.5)
         
         # final summary
         print('==== final summary (after retry attempts) ====')
+        print('Jobs that couldnt be resolved:')
+        print(skipped_jobs)
         summarizeResults(years_of_exp, keywords_list)
         
 
@@ -225,7 +120,7 @@ def mainWorkflow(jobIDs):
 
 def scrapeJobs(jobIDs):
     'scrapes the data for the given jobIDs'
-    skippedJobs = []
+    skippedJobs = set()
 
     years_of_exp = {}
     keywords_list = []
@@ -236,9 +131,15 @@ def scrapeJobs(jobIDs):
     for jobID in jobIDs:
         step += 1
         jobData = getJobData(jobID)
-        if (jobData == None):
-            print('no job data found for [{}]'.format(jobID))
-            skippedJobs.append(jobID)
+        if jobData[0] is False:
+            if (CONFIG.english_only and jobData[1] == 'non-english'):
+                if (CONFIG.debug_mode):
+                    print('non-english: {}'.format(jobID))
+                continue
+            if (CONFIG.debug_mode):
+                print('no job data found for [{}]'.format(jobID))
+                print('reason: {}'.format(jobData[1]))
+            skippedJobs.add(jobID)
             continue
         exp = jobData[0]
         keywords = jobData[1]
@@ -253,34 +154,12 @@ def scrapeJobs(jobIDs):
         keywords_list = keywords_list + keywords
 
         if (step % 10 == 0):
-            print('progress: {} percent ({}/{})'.format(step/len(jobIDs)*100, step, len(jobIDs)))
+            print('progress: {}% ({}/{})'.format(round(step/len(jobIDs)*100), step, len(jobIDs)))
     
     summary_info = (data_included_count, len(jobIDs), skippedJobs)
     return (years_of_exp, keywords_list, summary_info)
 
-def summarizeResults(years_of_exp, keywords_list, data_included = 0, len_data = 0):
-    'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
 
-    freq_keywords = nltk.FreqDist(keywords_list)
-
-    print('==== Results ====')
-    print('\n')
-    print('Frequency of keywords')
-    print('\n')
-    print(freq_keywords.most_common())
-    print('\n')
-    print('Frequency of years experience requirements')
-    print('\n')
-    print(years_of_exp)
-    print('\n')
-
-    if (data_included == 0 or len_data == 0):
-        return
-    print('\n')
-    print("== Search info ==")
-    print("total jobs found: {}".format(len_data))
-    print("jobs searched: {}".format(data_included/len_data*100))
-    print("jobs skipped: {}".format((len_data - data_included)/len_data*100))
 
 def getJobIDs():
 
@@ -288,7 +167,7 @@ def getJobIDs():
 
     done = False
     i = 0
-    jobIDs = []
+    jobIDs = set()
 
     startTime = time.perf_counter()
     print("Getting job IDs")
@@ -297,6 +176,10 @@ def getJobIDs():
         #load each page of results, and get all the job IDs from it
         fmtUrl = SEARCH_URL.format(KEYWORD, LOCATION,i)
         print('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
+        res = requestURL(fmtUrl)
+        # handle for if connection fails for some reason
+        if res[0] is False:
+            continue
         res = requests.get(fmtUrl)
         soup = BeautifulSoup(res.text, 'html.parser')
 
@@ -306,82 +189,152 @@ def getJobIDs():
             done = True
             break
 
-        # cut it off if code takes too long
-        #if (i % 100 == 0):
-        #    if (time.perf_counter() - startTime > timeLimit):
-        #        done = True
-        #        break
-
         for div in jobDivs:
             jobID = div.get('data-entity-urn').split(":")[3]
-            jobIDs.append(jobID)
+            jobIDs.add(jobID)
         
         i = i + 25 # 25 jobs per results page
 
     return jobIDs
 
-def getJobData(jobID):
+def getJobData(jobID,debug=False):
 
     fmtUrl = JOB_URL.format(jobID)
-    res = requests.get(fmtUrl)
-    soup = BeautifulSoup(res.text, 'html.parser')
+    res = requestURL(fmtUrl)
+    # handle for if connection fails for some reason
+    if res[0] is False:
+        return res
+    soup = BeautifulSoup(res[1], 'html.parser')
     
     descriptionSection = soup.find(class_=classNames.description)
+    if debug:
+        print(descriptionSection)
     if (descriptionSection == None):
-        print(' . . [no desc]')
-        #print(soup)
-        return None
-    qualifications = getQualifications(descriptionSection)
+        return (False, 'couldnt find description section')
+    qualifications = getQualifications2(descriptionSection)
 
-    if qualifications != None:
-        if qualifications[0] > 10:
+    if qualifications[0] is not False:
+        if qualifications[0] >= 10:
             print('High YOE found: {}y [{}]'.format(qualifications[0], jobID))
 
     return qualifications
 
 
-def getQualifications(description):
-    keyword_set = set()
-
-    # find a <strong> tag with words like "qualification(s)", "requirement(s)"
-    # from there, find the ul that has all the li bullet points of qualifications
-    qual = description.find(string=re.compile('qualification', re.I))
-    if qual == None:
-        qual = description.find(string=re.compile('requirement', re.I))
-    if qual == None:
-        print(' . [cant find qualifications]')
+def requestURL(url):
+    'Try to fetch the URL, and handle if the connection fails'
+    try:
+        res = requests.get(url, timeout=10)
+    except:
+        errmsg = 'connection error: Failed to connect to {}'.format(url)
+        print(errmsg)
+        return (False, errmsg)
     
-    # there should be a ul tag where all the description data is listed in bullet points
-    if qual == None:
-        ul_tag = description.find('ul')
-    else:
-        ul_tag = qual.parent.findNext('ul')
-    if ul_tag == None:
-        print(' . . [cant find ul tag]')
-        return None
-    all_li = ul_tag.findAll('li')
+    return (True, res.text)
 
-    # get list of each bullet point that includes years experience
+
+def getQualifications2(description):
+
+    # clean the description of unwanted tags that might interfere
+    for e in description.findAll('br'):
+        e.extract()
+    for e in description.findAll('strong'):
+        e.extract()
+
+    # first try searching for list tags
+    output = searchListTags(description)
+    if output[0] is not False:
+        return output
+    
+    # if that fails, try searching for p tags
+    output = searchPTags(description)
+    if output[0] is not False:
+        return output
+
+    return (False, 'No data could be scraped from the description...')
+
+def searchListTags(description):
+    'some linkedIn job postings are organized by ul/li tags. this searches in those.'
+    keyword_set = set()
     max = 0
-    if qual != None:
-        li_yearsExp = ul_tag.findAll(string=re.compile('year', re.I))
-        # get the max year listed
-        # if max remains 0, then no year data was found
-        for li in li_yearsExp:
-            stripStr = re.sub('[^0-9]','_', li)
-            nums = [n for n in stripStr.split('_') if n != '']
-            for n in nums:
-                if int(n) > max:
-                    max = int(n)
-            keywords = stripJunk(li)
-            keyword_set = keyword_set.union(keywords)
 
-    # check other bullet points for tech terms too
+    # find the list tags in the description
+    ul_tag = description.find('ul')
+    if ul_tag == None:
+        return (False, 'cant find ul tag')
+    all_li = ul_tag.findAll('li')
+    if (all_li == None):
+        return (False, 'cant find li tags...')
+
+    # check bullet points for tech terms and other useful information
     for li in all_li:
-        keywords = stripJunk(li.string)
-        keyword_set = keyword_set.union(keywords)
+        s = li.string
+        if (s == None):
+            if (CONFIG.debug_mode):
+                print('empty li tag?')
+                print(li)
+                print('if there are other tags inside <li>, they should be removed.')
+            continue
 
+        if (CONFIG.english_only and isForeignScript(s)):
+            return (False, 'non-english')
+
+        # 'year' is present, so this line should be listing years experience
+        if 'year' in s:
+            n = getMaxNumber(s)
+            if n > max:
+                max = n
+        
+        # find keywords
+        keywords = stripJunk(s)
+        keyword_set = keyword_set.union(keywords)
+    
     return (max, list(keyword_set))
+
+def searchPTags(description):
+    keyword_set = set()
+    max = 0
+
+    ptags = description.findAll('p')
+    if ptags == None:
+        return (False, 'no P tags could be found.')
+    
+    for p in ptags:
+        s = p.nextSibling
+        if (s == None) or (type(s) != element.NavigableString):
+            if (CONFIG.debug_mode):
+                print('empty p tag?')
+                print(p)
+                print('if there are other tags inside <p>, they should be removed')
+            continue
+        
+
+        if (CONFIG.english_only and isForeignScript(s)):
+            return (False, 'non-english')
+        
+        # 'year' is present, so this line should be listing years experience
+        if 'year' in s:
+            n = getMaxNumber(s)
+            if n > max:
+                max = n
+        
+        # find keywords
+        keywords = stripJunk(s)
+        keyword_set = keyword_set.union(keywords)
+    
+    return (max, list(keyword_set))
+
+
+def getMaxNumber(s):
+    'gets the max number listed in this string'
+    tempStr = s.lower()
+    max = 0
+
+    stripStr = re.sub('[^0-9]','_', tempStr)
+    nums = [n for n in stripStr.split('_') if n != '']
+    for n in nums:
+        if int(n) > max:
+            max = int(n)
+    return max
     
 
 # strips all "junk" from an input string and returns the keywords in a set
@@ -392,8 +345,12 @@ def getQualifications(description):
 def stripJunk(s):
     if (s == None):
         return set()
-    # don't allow non english/latin script text
-    if isNonLatinText(s):
+    if (type(s) != element.NavigableString):
+        return set()
+
+    # there must be at least some ascii characters, even if non-english
+    s = removeNonLatinText(s)
+    if len(s) == 0:
         return set()
     
     s = s.lower()
@@ -406,11 +363,11 @@ def stripJunk(s):
     # note: this may add performance slowdown since we are doing more iteration and checking for substrings here
     skip = set()
     savePhrases = []
-    for phrase in PHRASES:
+    for phrase in SAVE_PHRASES:
         if phrase in temp:
             skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
             savePhrases.append(phrase)
-    saveWords = [word for word in temp.split() if word in TECH_WORDS]
+    saveWords = [word for word in temp.split() if word in SAVE_WORDS]
 
     ignore = skip.union(IGNORE)
 
@@ -418,7 +375,7 @@ def stripJunk(s):
     tokenized = [word for word in nltk.word_tokenize(s) if not word in ignore] # cut ignore words
     clean1 = [word for word in tokenized if word not in STOP]
     tagged = nltk.pos_tag(clean1)
-    nouns = [word for (word, pos) in tagged if 'NN' in pos]
+    nouns = [lemmatizer.lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
 
     # combine our saveWords and NLTK's nouns
     # also conflate any similar terms that should be seen as the same thing
@@ -433,20 +390,74 @@ def stripJunk(s):
     output = set(conflated)
     return output
 
+def removeNonLatinText(s):
+    'removes all characters from non-latin scripts (such as Japanese, Arabic, etc)'
+    stripStr = re.sub("[^0-9a-zA-Z,.'-]",'_', s) # replaces all non alphanumeric (or not ,.) with _
+    cleanStr = ''
+    lastChar = ''
+    for ch in stripStr:
+        # when a word switches to _, add a space
+        if lastChar != '_':
+            if ch == '_':
+                cleanStr += ' '
+        if ch != '_':
+            cleanStr += ch
+        lastChar = ch
+    return cleanStr.strip()
 
-def isNonLatinText(s):
-    'determines if the given string has non-latin characters (such as Japanese, Arabic, etc)'
-    return ord(s[0]) > 128
+def isForeignScript(s):
+    'detects if the given string is a foreign script or not (non-ascii characters)'
+    original_length = len(s)
+    stripStr = removeNonLatinText(s)
 
+    # if > 50% of the string is comprised of non-ascii characters, it's probably not english.
+    if (len(stripStr) < (original_length / 2)):
+        return True
+    return False
+
+def summarizeResults(years_of_exp, keywords_list, data_included = 0, len_data = 0):
+    'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
+
+    freq_keywords = nltk.FreqDist(keywords_list)
+    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq > CONFIG.keyword_freq]
+
+    print('==== Results ====')
+    print('\n')
+    print('Frequency of keywords')
+    print('\n')
+    print(freq_keywords)
+    print('\n')
+    print('Frequency of years experience requirements')
+    print('\n')
+    print(years_of_exp)
+    print('\n')
+
+    if (data_included == 0 or len_data == 0):
+        return
+    print('\n')
+    print("== Search info ==")
+    print("total jobs found: {}".format(len_data))
+    print("jobs searched: {}/{} ({}%)".format(data_included,len_data,round(data_included/len_data*100)))
+    print("jobs skipped: {}/{}".format(len_data - data_included,len_data))
+                
 
 
 def testJob(jobID):
-    jobData = getJobData(jobID)
+    jobData = getJobData(jobID,debug=True)
     print(jobData)
 
 
-#testJob(3665915576)
+jp = '検討・構築。Material-UIをベースとしたUI・TypeScript+React+Next.jsを使用したフロントエンド開発'
+en = "We're looking for applicants who are good at handling day-to-day melee in a colisseum; this is fo-real y'all."
 
-#print(stripJunk("join a team focused on database technologies and troubleshoot projects"))
+#print(stripJunk(jp))
+
+#skiplist = ['3677087147', '3741638968', '3674112838', '3703271863', '3720174333', '3677087669', '3743166474', '3712394524', '3737030771', '3687519020', '3725657486', '3582388673', '3584722414', '3687509515', '3685305343', '3631870943', '3738600072', '3582387238', '3744407826', '3700316017', '3733781008', '3736216642', '3726999350', '3728026973', '3729882785', '3741492739', '3736860595', '3672074548', '3709544257', '3617897187', '3739515829', '3728032821', '3736997633', '3711973405', '3738014531', '3737048454', '3737011236', '3703285703', '3676795165', '3690038965', '3580065537', '3738661646', '3741643989', '3682043208', '3690041761', '3736994785', '3712602139', '3738116530', '3741023293', '3719656213', '3720159226', '3703278062', '3703273802', '3734177380', '3743170124', '3735911450', '3720969496', '3738113702', '3712395056', '3744476673', '3705953361', '3725656466', '3685159482', '3711859854', '3703270649', '3685170888', '3639409053', '3741561283', '3685186078', '3706271614', '3720946338', '3712396900', '3675699453', '3734185629', '3731712277', '3719595157', '3639402900', '3743167459', '3719651344', '3720946474', '3580064945', '3685301425', '3677082030', '3656072268', '3736991976', '3729865655', '3683026965', '3725665233', '3725665732', '3679892254', '3734179400', '3690032572', '3741563167', '3732506229', '3736994845', '3720959984', '3729864973', '3741021556', '3729892619', '3739823489', '3744479208', '3690229169', '3681150260', '3677082882', '3705947881', '3706255829', '3712387638', '3741641931', '3720938889', '3736201254', '3709551056', '3703284548', '3712384492', '3734175146', '3741640820', '3690025577', '3736998250', '3740384810', '3580066983', '3738611463', '3687513261', '3703266277', '3685186788', '3718478302', '3737722007', '3731496702', '3685177044', '3729880128', '3736213949', '3651641535', '3706264771', '3674106846', '3720965676', '3631868997', '3666557862', '3720947816', '3734166985', '3700304062', '3729874021', '3719655964', '3736860538', '3732840780', '3645148380', '3744414589', '3685155060', '3712383426', '3676788939', '3719664606', '3709570260', '3742160774', '3737006698', '3627811808', '3744411463', '3677618495', '3687519102', '3690025572', '3671567979', '3737016432', '3703281573', '3685195617', '3735598695', '3733217412', '3725658588', '3744407719', '3726564902', '3685166670', '3744408256', '3664564121', '3741493697', '3709543102', '3743170276', '3677085464', '3738130552', '3638899945', '3687511244', '3719664764', '3731331688', '3734171694', '3744199202', '3690034015', '3741496594', '3606400560', '3736997890', '3687504614', '3719667931', '3690022868', '3741494568', '3731497733', '3714618130', '3683030483', '3685194920', '3677088581', '3744195755', '3738596699', '3675695761', '3729366069', '3703281188', '3709544008', '3725989757', '3731709227', '3678586035', '3705952214', '3736225370', '3736995869', '3737032058', '3728033132', '3737005176', '3729770652', '3690209841', '3681169022', '3690159216', '3690048569', '3743169258', '3735667829', '3687508184', '3720943832', '3741643700', '3744478451', '3739523299', '3703274676', '3743170132', '3735920144', '3712379163', '3731594717', '3712373966', '3582723326', '3736993871', '3737032389', '3741490920', '3739525432', '3719665522', '3702392092', '3689536005', '3709548922', '3741645237', '3709537898']
+
+
+#for jobID in skiplist:
+#    testJob(jobID)
+#    ans = input('enter to continue: ')
+#    os.system('clear')
 
 scrapeLinkedIn()
