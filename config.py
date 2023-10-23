@@ -1,13 +1,19 @@
 class config:
+    # keyword to include in the job search URL
+    keyword = 'Software Developer'
+    # location to include in the job search URL
+    location = 'Tokyo, Japan'
     # allow only english content to be searched?
     english_only = False
-    # debug mode enables showing detailed output of possible errors in the search
+    # debug mode enables the debug config and showing detailed output of possible errors in the search
+    # this should be turned off when other code is listening for output
     debug_mode = True
     # frequency cut off for keywords - only keywords of this frequency or above will appear in results
-    keyword_freq = 3
+    keyword_freq = 5
     # set to enable pausing to occur in the script; mostly when summaries are displayed for an end user
     enable_pausing = True
     # set to enable logging misc updates to the console; mostly for status updates on the progress of the app
+    # this should be turned off when other code is listening for output
     enable_misc_logging = True
 
 class debugger:

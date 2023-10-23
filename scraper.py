@@ -8,6 +8,8 @@ from nltk.stem import WordNetLemmatizer
 import ssl
 import time
 from socket import error
+import json
+from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
 from test import jobIDs as test_job_ids
 
@@ -57,11 +59,6 @@ class classNames:
     # second: employment type (fulltime, contract, etc)
     criteria = 'description__job-criteria-item'
 
-
-# You can change the search criteria here
-KEYWORD = 'Software Developer'
-LOCATION = None
-
 SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={0}'
 JOB_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'
 
@@ -85,7 +82,6 @@ def getSearchURL(keyword, start = 0, location = None):
     return url
 
 def scrapeLinkedIn(test_IDs = None):
-
     # display config
     if (CONFIG.debug_mode):
         print('DEBUG MODE: on')
@@ -139,7 +135,9 @@ def scrapeLinkedIn(test_IDs = None):
         consoleLog('==== final summary (after retry attempts) ====')
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
-        summarizeResults(years_of_exp, keywords_list)
+    
+    summarizeResults(years_of_exp, keywords_list)
+    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs))
         
 
 def mainWorkflow(jobIDs):
@@ -147,7 +145,8 @@ def mainWorkflow(jobIDs):
     (years_of_exp, keywords_list, summary_info) = scrapeJobs(jobIDs)
 
     (data_included, len_data, skipped_jobs) = summary_info
-    summarizeResults(years_of_exp, keywords_list, data_included, len_data)
+    if (CONFIG.debug_mode):
+        summarizeResults(years_of_exp, keywords_list, data_included, len_data)
 
     return (years_of_exp, keywords_list, skipped_jobs)
 
@@ -204,7 +203,7 @@ def scrapeJobs(jobIDs):
 
 
 def getJobIDs():
-
+    'gets job IDs for linked in job postings'
     timeLimit = 60
 
     done = False
@@ -215,7 +214,7 @@ def getJobIDs():
 
     while not done:
         #load each page of results, and get all the job IDs from it
-        fmtUrl = getSearchURL(KEYWORD, i, LOCATION)
+        fmtUrl = getSearchURL(CONFIG.keyword, i, CONFIG.location)
         consoleLog('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
         res = requestURL(fmtUrl)
         # handle for if connection fails for some reason
@@ -254,7 +253,7 @@ def getJobData(jobID,debug=False):
         print(descriptionSection)
     if (descriptionSection == None):
         return (False, 'couldnt find description section')
-    qualifications = getQualifications2(descriptionSection)
+    qualifications = getQualifications(descriptionSection)
 
     if (qualifications[0] is not False) and CONFIG.debug_mode:
         if qualifications[0] >= 10:
@@ -276,8 +275,8 @@ def requestURL(url):
     return (True, res.text)
 
 
-def getQualifications2(description):
-
+def getQualifications(description):
+    'retrieves data from the description section of the job posting'
     # clean the description of unwanted tags that might interfere
     for e in description.findAll('br'):
         e.extract()
@@ -285,38 +284,30 @@ def getQualifications2(description):
         e.extract()
 
     # first try searching for list tags
-    output = searchListTags(description)
-    if output[0] is not False:
-        return output
+    tags = findListTags(description)
+    if tags == None:
+        tags = findPTags(description)
+    if tags == None:
+        return (False, 'No list or p tags could be found in description.')
     
     # if that fails, try searching for p tags
-    output = searchPTags(description)
-    if output[0] is not False:
-        return output
+    output = searchTags(tags)
+    return output
 
-    return (False, 'No data could be scraped from the description...')
 
-def searchListTags(description):
-    'some linkedIn job postings are organized by ul/li tags. this searches in those.'
+def searchTags(tags):
+    'search the tags for text and parse out keywords.'
     keyword_set = set()
     max = 0
-
-    # find the list tags in the description
-    ul_tag = description.find('ul')
-    if ul_tag == None:
-        return (False, 'cant find ul tag')
-    all_li = ul_tag.findAll('li')
-    if (all_li == None):
-        return (False, 'cant find li tags...')
 
     # check bullet points for tech terms and other useful information
-    for li in all_li:
-        s = findString(li)
+    for tag in tags:
+        s = findString(tag)
         if (s == None):
             if (CONFIG.debug_mode):
-                print('empty li tag?')
-                print(li)
-                print('if there are other tags inside <li>, they should be removed.')
+                print('empty tag?')
+                print(tag)
+                print('if there are any child tags, they should be removed or traversed.')
             continue
 
         if (CONFIG.english_only and isForeignScript(s)):
@@ -334,38 +325,18 @@ def searchListTags(description):
     
     return (max, list(keyword_set))
 
-def searchPTags(description):
-    keyword_set = set()
-    max = 0
-
+def findListTags(description):
+    'finds <li> tags in the description'
+    ul_tag = description.find('ul')
+    if ul_tag == None:
+        return None
+    all_li = ul_tag.findAll('li')
+    return all_li
+    
+def findPTags(description):
+    'finds <p> tags in the description'
     ptags = description.findAll('p')
-    if ptags == None:
-        return (False, 'no P tags could be found.')
-    
-    for p in ptags:
-        s = findString(p)
-        if (s == None) or (type(s) != element.NavigableString):
-            if (CONFIG.debug_mode):
-                print('empty p tag?')
-                print(p)
-                print('if there are other tags inside <p>, they should be removed')
-            continue
-        
-
-        if (CONFIG.english_only and isForeignScript(s)):
-            return (False, 'non-english')
-        
-        # 'year' is present, so this line should be listing years experience
-        if 'year' in s:
-            n = getMaxNumber(s)
-            if n > max:
-                max = n
-        
-        # find keywords
-        keywords = stripJunk(s)
-        keyword_set = keyword_set.union(keywords)
-    
-    return (max, list(keyword_set))
+    return ptags
 
 def findString(tag):
     'try to find a string in the given tag or its children'
@@ -408,6 +379,7 @@ def getMaxNumber(s):
 # input ->  "preferred: deep understanding of python, javascript, and mySQL"
 # output -> {'python', 'javascript', 'mySQL'}
 def stripJunk(s):
+    'parses out keywords from a raw string'
     if (s == None):
         return set()
     if (type(s) != element.NavigableString):
@@ -503,7 +475,7 @@ def summarizeResults(years_of_exp, keywords_list, data_included = 0, len_data = 
     'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
 
     freq_keywords = nltk.FreqDist(keywords_list)
-    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq > CONFIG.keyword_freq]
+    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
     if CONFIG.enable_misc_logging:
         print('==== Results ====')
         print('\n')
@@ -529,7 +501,17 @@ def summarizeResults(years_of_exp, keywords_list, data_included = 0, len_data = 
         print("jobs skipped: {}/{}".format(len_data - data_included,len_data))
     else:
         print(freq_keywords)
-                
+
+def writeToJSON(keywords_list, jobCount):
+    freq_keywords = nltk.FreqDist(keywords_list)
+    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
+    output = [jobCount] + freq_keywords
+
+    today = datetime.today().strftime('%Y-%m-%d')
+    with open('data/{}.json'.format(today), 'w', encoding='utf-8') as f:
+        json.dump(output, f, ensure_ascii=False, indent=4)
+
+
 # functions for testing stuff
 
 def testJob(jobID):
@@ -559,4 +541,4 @@ def manualFindIgnore(word_list):
 #    ans = input('enter to continue: ')
 #    os.system('clear')
 
-scrapeLinkedIn(test_job_ids) 
+scrapeLinkedIn()
