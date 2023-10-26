@@ -15,10 +15,14 @@ class config:
     # set to enable logging misc updates to the console; mostly for status updates on the progress of the app
     # this should be turned off when other code is listening for output
     enable_misc_logging = True
+    # minimum number of jobs to be searched; if the finding jobs step doesn't find enough, it retries
+    min_job_count = 1000
+    # number of times the code can retry loading data for skipped jobs
+    retry_count = 10
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
     find_terms = False
     # words in this set will be paused on if find_terms is on
-    find_list = {'s','j','sw','t','ci','pl','k','d','m','cd','pl'}
+    find_list = {'hp'}
 

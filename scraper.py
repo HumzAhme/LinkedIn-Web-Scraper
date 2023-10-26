@@ -11,7 +11,7 @@ from socket import error
 import json
 from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
-from test import jobIDs as test_job_ids
+from test import test_jobIDs
 
 # to use your own dataset, change this import to point to your own version of terms.py
 from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
@@ -62,9 +62,9 @@ class classNames:
 SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={0}'
 JOB_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'
 
-def pause(sec):
+def pause(sec, force = False):
     'time.sleep that abides by config rules'
-    if CONFIG.enable_pausing:
+    if CONFIG.enable_pausing or force:
         time.sleep(sec)
 
 def consoleLog(s):
@@ -81,7 +81,7 @@ def getSearchURL(keyword, start = 0, location = None):
     url = url + '&start={}'.format(start)
     return url
 
-def scrapeLinkedIn(test_IDs = None):
+def scrapeLinkedIn(test_IDs = None, saveOutput = False):
     # display config
     if (CONFIG.debug_mode):
         print('DEBUG MODE: on')
@@ -98,7 +98,7 @@ def scrapeLinkedIn(test_IDs = None):
 
     # if there were any skipped jobs, try re-doing them
     if (len(skipped_jobs) > 0):
-        retry = 5
+        retry = CONFIG.retry_count
         pause(2)
 
         consoleLog('Attempting to resolve skipped jobs. Will attempt up to {} times.'.format(retry))
@@ -129,7 +129,7 @@ def scrapeLinkedIn(test_IDs = None):
                     years_of_exp[year] = skip_years_exp[year]
             keywords_list = keywords_list + skip_keywords
             consoleLog('pausing...')
-            pause(5)
+            pause(5, force=True)
         
         # final summary
         consoleLog('==== final summary (after retry attempts) ====')
@@ -137,6 +137,11 @@ def scrapeLinkedIn(test_IDs = None):
         consoleLog(skipped_jobs)
     
     summarizeResults(years_of_exp, keywords_list)
+    if not saveOutput:
+        print('Currently set to NOT save output data. Are you sure?')
+        ans = input("(y/n; n = save data!): ")
+        if ans.lower() != 'n':
+            return
     writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs))
         
 
@@ -204,7 +209,6 @@ def scrapeJobs(jobIDs):
 
 def getJobIDs():
     'gets job IDs for linked in job postings'
-    timeLimit = 60
 
     done = False
     i = 0
@@ -212,9 +216,14 @@ def getJobIDs():
 
     consoleLog("Getting job IDs")
 
+    # number of attempts to reload a URL
+    attempts = 0
+    max_attempts = 5
+
     while not done:
         #load each page of results, and get all the job IDs from it
         fmtUrl = getSearchURL(CONFIG.keyword, i, CONFIG.location)
+        consoleLog('jobs found: {}'.format(len(jobIDs)))
         consoleLog('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
         res = requestURL(fmtUrl)
         # handle for if connection fails for some reason
@@ -225,9 +234,20 @@ def getJobIDs():
 
         jobDivs = soup.find_all(class_='base-card')
 
+        # no jobs are found?
         if (len(jobDivs) == 0):
+            # if the URL returned nothing, try reloading it again a few times
+            if (len(jobIDs) < CONFIG.min_job_count) and (attempts < max_attempts):
+                attempts += 1
+                consoleLog('retrying jobIDs url: attempt {}'.format(attempts))
+                pause(1, force=True)
+                continue
             done = True
             break
+        # reset attempts if we succeed in getting a valid URL
+        if (attempts > 0):
+            consoleLog('succeeded in getting url finally!')
+            attempts = 0
 
         for div in jobDivs:
             jobID = div.get('data-entity-urn').split(":")[3]
@@ -239,20 +259,29 @@ def getJobIDs():
         print(jobIDs)
     return jobIDs
 
-def getJobData(jobID,debug=False):
-
+def getJobData(jobID):
+    consoleLog('current jobID: {}'.format(jobID))
+    retry = 0
+    max_retry = 2
     fmtUrl = JOB_URL.format(jobID)
-    res = requestURL(fmtUrl)
-    # handle for if connection fails for some reason
-    if res[0] is False:
-        return res
-    soup = BeautifulSoup(res[1], 'html.parser')
-    
-    descriptionSection = soup.find(class_=classNames.description)
-    if debug:
-        print(descriptionSection)
+    descriptionSection = None
+
+    # retry getting the job data if it fails
+    while ((descriptionSection == None) and (retry < max_retry)):
+        res = requestURL(fmtUrl)
+        # handle for if connection fails for some reason
+        if res[0] is False:
+            return res
+        soup = BeautifulSoup(res[1], 'html.parser')
+        descriptionSection = soup.find(class_=classNames.description)
+        retry += 1
+        if (descriptionSection == None):
+            consoleLog('failed to load job data - trying again')
+            pause(1, force=True)
     if (descriptionSection == None):
-        return (False, 'couldnt find description section')
+            consoleLog(soup)
+            return (False, 'couldnt find description section')
+    
     qualifications = getQualifications(descriptionSection)
 
     if (qualifications[0] is not False) and CONFIG.debug_mode:
@@ -515,7 +544,7 @@ def writeToJSON(keywords_list, jobCount):
 # functions for testing stuff
 
 def testJob(jobID):
-    jobData = getJobData(jobID,debug=True)
+    jobData = getJobData(jobID)
     print(jobData)
 
 def testSentence(sentence):
@@ -541,4 +570,4 @@ def manualFindIgnore(word_list):
 #    ans = input('enter to continue: ')
 #    os.system('clear')
 
-scrapeLinkedIn()
+scrapeLinkedIn(saveOutput=False)

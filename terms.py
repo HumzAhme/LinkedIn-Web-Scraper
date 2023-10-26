@@ -51,7 +51,7 @@ IGNORE = {
     'gateway', 'gather', 'gathering', 'generation', 'globe', 'goal', 'government', 'grooming', 'ground', 'group', 'growth', 'guidance', 'guide', 
     'guideline', 
     'hand', 'handling', 'hands-on', 'hardware', 'health', 'healthcare', 'help', 'hibernate', 'high-performance', 'high-quality', 'hire', 'holiday', 
-    'home', 'hour', 'hourly', 'hr', 
+    'home', 'hour', 'hourly', 'hr', 'hp',
     'idea', 'ideation', 'identifies', 'identify', 'identifying', 'identity', 'image', 'impact', 'implement', 'implementation', 'improve', 
     'improvement', 'in-depth', 'in-house', 'incident', 'increase', 'independence', 'individual', 'industry', 'influence', 'information', 
     'infrastructure', 'initiative', 'innovation', 'input', 'inquiry', 'insight', 'installation', 'institution', 'instruction', 'insurance', 
