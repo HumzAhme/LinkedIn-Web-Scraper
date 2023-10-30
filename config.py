@@ -1,8 +1,8 @@
 class config:
     # keyword to include in the job search URL
-    keyword = 'Software Developer'
+    keywords = ['Software Developer','Software Engineer']
     # location to include in the job search URL
-    location = 'Tokyo, Japan'
+    location = None
     # allow only english content to be searched?
     english_only = False
     # debug mode enables the debug config and showing detailed output of possible errors in the search
@@ -24,5 +24,5 @@ class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
     find_terms = False
     # words in this set will be paused on if find_terms is on
-    find_list = {'hp'}
+    find_list = {''}
 

@@ -10,7 +10,7 @@
 # it's best to fill this up with as much junk words as possible, because it cuts words out in the beginning and will prevent
 # extra unnecessary looping
 STOP = {
-    'join','level','review','content','builder','detail','liaise','evaluating','make','~','’','e.g', 'e.g.','i.e.','i.e'
+    'join','level','review','content','builder','detail','liaise','evaluating','make','~','’','e.g', 'e.g.','i.e.','i.e','take','action','+'
 }
 
 # words to be excluded from the final output - if any stand-alone word isn't interesting, include it here. If there are words that will
@@ -18,7 +18,7 @@ STOP = {
 # could be interesting in a phrase context.
 IGNORE = {
     '*', 'ability', 'abreast', 'acceptance', 'access', 'accessibility', 'accordance', 'account', 'accountability', 'accuracy', 'acquisition', 
-    'action', 'activity', 'addition', 'address', 'adherence', 'adheres', 'administration', 'adoption', 'advance', 'advancement', 'advice', 
+    'activity', 'addition', 'address', 'adherence', 'adheres', 'administration', 'adoption', 'advance', 'advancement', 'advice', 
     'advocate', 'agility', 'aim', 'algorithm', 'align', 'alignment', 'allowance', 'alternate', 'alternative', 'amount', 'analysis', 'analytics', 
     'analyze', 'analyzes', 'answer', 'app', 'applicant', 'application', 'applies', 'apply', 'applying', 'approach', 'appropriate', 'approval', 
     'apps', 'architecture', 'area', 'aspect', 'assessment', 'asset', 'assignment', 'assist', 'assistance', 'associate', 'assurance', 'attention', 
@@ -90,7 +90,9 @@ IGNORE = {
     'vacation', 'validation', 'value', 'variety', 'vendor', 'verification', 'verify', 'version', 'view', 'visa', 'vision', 'volume', 
     'way', 'website', 'week', 'while', 'willingness', 'window', 'windows', 'wisdom', 'work', 'work-life', 'worker', 'workflow', 'working', 'world', 
     'world-class', 'write', 'writing', 
-    'year', 'yesterday', 'yr'}
+    'year', 'yesterday', 'yr',
+    'one','boot','query','root','university','setting','proven','level','roadmap','manual','expectation','brand','note','existing','ship','look',
+    'ticket','sex','religion','sexuality','gender','diversity','one','two','three','type','race'}
 
 
 # tech words we want to make sure aren't ignored or stripped by NLTK logic by accident
@@ -131,6 +133,7 @@ SAVE_PHRASES = [
     'application engineer',
     'mobile developer',
     'google cloud',
+    'oracle cloud',
     'amazon web service',
     'rest api',
     'restful api',
@@ -141,7 +144,8 @@ SAVE_PHRASES = [
     'ci cd',
     'react js',
     'angular js',
-    'vue js'
+    'vue js',
+    '3d modeling',
 
 ]
 
@@ -165,15 +169,21 @@ nlp = 'Natural Language Processing'
 sass = 'Sass'
 ux = 'UX'
 aws = 'AWS'
+gcp = 'Google Cloud'
+azure = 'Azure'
+oracloud = 'Oracle Cloud'
 python = 'Python'
 java = 'Java'
 ml = 'Machine Learning'
 ai = 'Artificial Intelligence'
 csharp = 'C#'
 cplus = 'C++'
+c = 'C'
+perl = 'Perl'
 visualstudio = 'Visual Studio'
 bachelor = "Bachelor's Degree"
 master = "Master's Degree"
+sql = 'SQL'
 
 # terms to conflate into a singular preferred form
 # since there are many ways a given concept may be written, we conform
@@ -226,13 +236,30 @@ CONFLATE = {
     'c-sharp': csharp,
     # c++
     'c++': cplus,
+    # c
+    'c': c,
+    # perl:
+    'perl': perl,
+    # sql
+    'sql': sql,
+    'mysql': sql,
+    'postgre': sql,
+    'postgresql': sql,
+    # cloud
+    'aws': aws,
+    'amazon web service': aws,
+    'gcp': gcp,
+    'google cloud': gcp,
+    'google cloud platform': gcp,
+    'azure': azure,
+    'oracle cloud': oracloud,
     # misc
     'batchelor': bachelor,
     'bachelor': bachelor,
     'bachelor degree': bachelor,
     'bachelors degree': bachelor,
     'baccalaureate': bachelor,
-    'master': master,
+    'masters': master,
     'master degree': master,
     'masters degree': master,
     'restful api': restAPI,
@@ -254,8 +281,6 @@ CONFLATE = {
     'nlp': nlp,
     'natural language processing': nlp,
     'ux': ux,
-    'aws': aws,
-    'amazon web service': aws,
     'ml': ml,
     'machine learning': ml,
     'ai': ai,

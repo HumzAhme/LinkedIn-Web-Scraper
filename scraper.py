@@ -81,7 +81,7 @@ def getSearchURL(keyword, start = 0, location = None):
     url = url + '&start={}'.format(start)
     return url
 
-def scrapeLinkedIn(test_IDs = None, saveOutput = False):
+def scrapeLinkedIn(test_IDs = None, saveOutput = True):
     # display config
     if (CONFIG.debug_mode):
         print('DEBUG MODE: on')
@@ -210,50 +210,51 @@ def scrapeJobs(jobIDs):
 def getJobIDs():
     'gets job IDs for linked in job postings'
 
-    done = False
-    i = 0
     jobIDs = set()
 
-    consoleLog("Getting job IDs")
+    for keyword in CONFIG.keywords:
+        done = False
+        i = 0
+        consoleLog("Getting job IDs for '{}'".format(keyword))
 
-    # number of attempts to reload a URL
-    attempts = 0
-    max_attempts = 5
+        # number of attempts to reload a URL
+        attempts = 0
+        max_attempts = 5
 
-    while not done:
-        #load each page of results, and get all the job IDs from it
-        fmtUrl = getSearchURL(CONFIG.keyword, i, CONFIG.location)
-        consoleLog('jobs found: {}'.format(len(jobIDs)))
-        consoleLog('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
-        res = requestURL(fmtUrl)
-        # handle for if connection fails for some reason
-        if res[0] is False:
-            continue
-        res = requests.get(fmtUrl)
-        soup = BeautifulSoup(res.text, 'html.parser')
-
-        jobDivs = soup.find_all(class_='base-card')
-
-        # no jobs are found?
-        if (len(jobDivs) == 0):
-            # if the URL returned nothing, try reloading it again a few times
-            if (len(jobIDs) < CONFIG.min_job_count) and (attempts < max_attempts):
-                attempts += 1
-                consoleLog('retrying jobIDs url: attempt {}'.format(attempts))
-                pause(1, force=True)
+        while not done:
+            #load each page of results, and get all the job IDs from it
+            fmtUrl = getSearchURL(keyword, i, CONFIG.location)
+            consoleLog('jobs found: {}'.format(len(jobIDs)))
+            consoleLog('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
+            res = requestURL(fmtUrl)
+            # handle for if connection fails for some reason
+            if res[0] is False:
                 continue
-            done = True
-            break
-        # reset attempts if we succeed in getting a valid URL
-        if (attempts > 0):
-            consoleLog('succeeded in getting url finally!')
-            attempts = 0
+            res = requests.get(fmtUrl)
+            soup = BeautifulSoup(res.text, 'html.parser')
 
-        for div in jobDivs:
-            jobID = div.get('data-entity-urn').split(":")[3]
-            jobIDs.add(jobID)
-        
-        i = i + 25 # 25 jobs per results page
+            jobDivs = soup.find_all(class_='base-card')
+
+            # no jobs are found?
+            if (len(jobDivs) == 0):
+                # if the URL returned nothing, try reloading it again a few times
+                if (len(jobIDs) < CONFIG.min_job_count) and (attempts < max_attempts):
+                    attempts += 1
+                    consoleLog('retrying jobIDs url: attempt {}'.format(attempts))
+                    pause(1, force=True)
+                    continue
+                done = True
+                break
+            # reset attempts if we succeed in getting a valid URL
+            if (attempts > 0):
+                consoleLog('succeeded in getting url finally!')
+                attempts = 0
+
+            for div in jobDivs:
+                jobID = div.get('data-entity-urn').split(":")[3]
+                jobIDs.add(jobID)
+            
+            i = i + 25 # 25 jobs per results page
 
     if (CONFIG.debug_mode):
         print(jobIDs)
@@ -438,17 +439,19 @@ def stripJunk(s):
     ignore = skip.union(IGNORE)
 
     # NLTK tries to find nouns (usually pretty well!)
-    tokenized = [word for word in nltk.word_tokenize(s) if word not in ignore] # cut ignore words
-    clean1 = [word for word in tokenized if word not in STOP]
-    tagged = nltk.pos_tag(clean1)
+    tokenized = [word for word in nltk.word_tokenize(s)]
+    tagged = nltk.pos_tag(tokenized)
     nouns = [lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
 
     # combine our saveWords and NLTK's nouns
-    # also conflate any similar terms that should be seen as the same thing
+    # remove stop words or ignore words, and then conflate any terms into
+    # their preferred forms
     allTheWords = nouns + saveWords + savePhrases
     conflated = []
     for word in allTheWords:
         if (word in ignore):
+            continue
+        if (word in STOP):
             continue
         if (word in CONFLATE):
             conflated.append(CONFLATE[word])
@@ -539,6 +542,7 @@ def writeToJSON(keywords_list, jobCount):
     today = datetime.today().strftime('%Y-%m-%d')
     with open('data/{}.json'.format(today), 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=4)
+    consoleLog('Saved data to {}.json!'.format(today))
 
 
 # functions for testing stuff
