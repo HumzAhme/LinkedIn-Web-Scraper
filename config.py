@@ -24,5 +24,5 @@ class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
     find_terms = False
     # words in this set will be paused on if find_terms is on
-    find_list = {''}
+    find_list = {}
 

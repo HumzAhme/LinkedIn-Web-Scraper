@@ -17,92 +17,89 @@ STOP = {
 # never be interesting (like stop words), put them in STOP instead. Some of these words may appear coupled with other words in PHRASES, since they
 # could be interesting in a phrase context.
 IGNORE = {
-    '*', 'ability', 'abreast', 'acceptance', 'access', 'accessibility', 'accordance', 'account', 'accountability', 'accuracy', 'acquisition', 
-    'activity', 'addition', 'address', 'adherence', 'adheres', 'administration', 'adoption', 'advance', 'advancement', 'advice', 
-    'advocate', 'agility', 'aim', 'algorithm', 'align', 'alignment', 'allowance', 'alternate', 'alternative', 'amount', 'analysis', 'analytics', 
-    'analyze', 'analyzes', 'answer', 'app', 'applicant', 'application', 'applies', 'apply', 'applying', 'approach', 'appropriate', 'approval', 
-    'apps', 'architecture', 'area', 'aspect', 'assessment', 'asset', 'assignment', 'assist', 'assistance', 'associate', 'assurance', 'attention', 
-    'attitude', 'authentication', 'authorization', 'automation', 'availability', 
-    'background', 'backlog', 'balance', 'base', 'basis', 'behavior', 'benefit', 'bi', 'blog', 'bonus', 'bottleneck', 'browser', 'bug', 'build', 
-    'building', 'business', 
-    'camera', 'candidate', 'capability', 'capacity', 'capital', 'card', 'care', 'career', 'case', 'cause', 'center', 'ceremony', 'certification', 
-    'challenge', 'champion', 'change', 'citizen', 'citizenship', 'city', 'clean', 'clearance', 'client', 'climate', 'coach', 'code', 'codebase', 
-    'coding', 'collaborate', 'collaborates', 'collaboration', 'collaborative', 'colleague', 'collection', 'collective', 'college', 'comment', 
-    'commitment', 'communicate', 'communication', 'communicator', 'community', 'company', 'compass', 'compatibility', 'compiling', 'completion', 
-    'complex', 'complexity', 'compliance', 'component', 'compose', 'comprehensive', 'computer', 'computing', 'concept', 'conduct', 'conducting', 
-    'confer', 'conference', 'configuration', 'configures', 'confluence', 'connect', 'connectivity', 'consequence', 'consideration', 'consistency', 
-    'constraint', 'construction', 'constructive', 'consumer', 'container', 'contract', 'contractor', 'contribute', 'contribution', 'contributor', 
-    'control', 'controller', 'conversation', 'conversion', 'coordinate', 'coordination', 'core', 'corporation', 'cost', 'counterpart', 'country', 
-    'courage', 'coverage', 'craft', 'create', 'creates', 'creation', 'creativity', 'creator', 'cross-browser', 'culture', 'custom', 'customer', 
-    'customizes', 'cutting', 'cutting-edge', 'cycle', 
-    'dashboard', 'data', 'date', 'day', 'db', 'deadline', 'debug', 'debugging', 'decision', 'defect', 'define', 'definition', 'degree', 'deliver', 
-    'deliverable', 'delivers', 'delivery', 'demand', 'demo', 'demonstrate', 'demonstration', 'dental', 'department', 'dependency', 'deploy', 
-    'deployment', 'design', 'designer', 'designing', 'desire', 'detail', 'detection', 'develop', 'developer', 'developing', 'development', 
-    'develops', 'device', 'diagram', 'direction', 'director', 'disability', 'discipline', 'discus', 'discussion', 'display', 'diverse', 'document', 
-    'documentation', 'documenting', 'domain', 'drive', 'driver', 'duration', 'duty', 'database',
-    'earn', 'ecosystem', 'edge', 'editor', 'education', 'effectiveness', 'efficiency', 'efficient', 'effort', 'element', 
-    'eligibility', 'email', 'emphasis', 'employee', 'employer', 'employment', 'end', 'end-to-end', 'end-users', 'engage', 'engagement', 'engine', 
-    'engineer', 'engineering', 'enhance', 'enhancement', 'ensures', 'enterprise', 'entirety', 'environment', 'equation', 'equipment', 'equivalent', 
-    'error', 'estimate', 'estimation', 'etc', 'ethic', 'evaluate', 'evaluation', 'event', 'everyone', 'excellence', 'excellent', 'exchange', 
-    'execute', 'execution', 'executive', 'expense', 'experience', 'experiment', 'expert', 'expertise', 'exposure', 
-    'facilitate', 'facilitating', 'facility', 'facing', 'factor', 'failure', 'familiarity', 'family', 'feasibility', 'feature', 'feedback', 
-    'field', 'firm', 'fix', 'flexibility', 'flow', 'focus', 'form', 'fortune', 'foster', 'foundation', 'framework', 'function', 'functional', 
-    'functionality', 'functioning', 'fundamental', 'future', 
-    'gateway', 'gather', 'gathering', 'generation', 'globe', 'goal', 'government', 'grooming', 'ground', 'group', 'growth', 'guidance', 'guide', 
-    'guideline', 
-    'hand', 'handling', 'hands-on', 'hardware', 'health', 'healthcare', 'help', 'hibernate', 'high-performance', 'high-quality', 'hire', 'holiday', 
-    'home', 'hour', 'hourly', 'hr', 'hp',
-    'idea', 'ideation', 'identifies', 'identify', 'identifying', 'identity', 'image', 'impact', 'implement', 'implementation', 'improve', 
-    'improvement', 'in-depth', 'in-house', 'incident', 'increase', 'independence', 'individual', 'industry', 'influence', 'information', 
-    'infrastructure', 'initiative', 'innovation', 'input', 'inquiry', 'insight', 'installation', 'institution', 'instruction', 'insurance', 
-    'integrate', 'integration', 'integrity', 'intent', 'interact', 'interaction', 'interest', 'interface', 'internet', 'interview', 'investigate', 
-    'investigation', 'issue', 'job', 'journey', 'jr', 'key', 'knowledge', 'landscape', 'language', 'layout', 'lead', 'leader', 'leadership', 'learn', 
-    'learning', 'leverage', 'liaison', 'library', 'lieu', 'life', 'life-cycle', 'lifecycle', 'limitation', 'line', 'location', 'log', 'logic', 'lunch', 
-    'maintain', 'maintainability', 'maintaining', 'maintains', 'maintenance', 'making', 'manage', 'management', 'manager', 'manipulation', 'manner', 
-    'market', 'marketing', 'match', 'material', 'matter', 'measure', 'mechanism', 'medium', 'meet', 'meeting', 'member', 'mentor', 'merit', 'message', 
-    'method', 'methodology', 'metric', 'middleware', 'migration', 'million', 'mind', 'mindset', 'minimum', 'mission', 'mobile', 'mockups', 'model', 
-    'modification', 'modify', 'module', 'money', 'monitor', 'monitoring', 'month', 'moral', 'need', 'network', 
-    'object', 'objective', 'offer', 'office', 'ok', 'on-going', 'onboarding', 'online', 'opening', 'operate', 'operating', 'operation', 'opportunity', 
-    'optimization', 'optimize', 'option', 'orchestration', 'order', 'organization', 'orientation', 'others', 'outcome', 'output', 'oversee', 
-    'overtime', 'owner', 'ownership', 
-    'package', 'page', 'pair', 'part', 'participant', 'participate', 'participates', 'partner', 'partnership', 'party', 'passion', 'passionate', 
-    'pattern', 'pay', 'payment', 'peer', 'people', 'perform', 'performance', 'performing', 'performs', 'permit', 'personnel', 'phase', 'pipeline', 
-    'place', 'plan', 'planning', 'platform', 'play', 'player', 'please', 'plus', 'point', 'policy', 'portfolio', 'position', 'power', 'practice', 
-    'prepare', 'prepares', 'presentation', 'pricing', 'principle', 'prioritization', 'priority', 'problem', 'problem-solving', 'procedure', 
-    'process', 'processing', 'produce', 'product', 'production', 'productivity', 'profession', 'professional', 'proficiency', 'proficient', 
-    'program', 'programming', 'progress', 'progression', 'project', 'prospect', 'protocol', 'prototype', 'provide', 'providing', 'publication', 
-    'pull', 'purpose', 
-    'qualification', 'quality', 'question', 
-    'raise', 'range', 'rate', 'reach', 'recognition', 'recommend', 'recommendation', 'record', 'reference', 'referral', 'refinement', 'regression', 
-    'regulation', 'reimbursement', 'relationship', 'release', 'relevant', 'reliability', 'relocation', 'remuneration', 'report', 'reporting', 
-    'repository', 'request', 'requirement', 'research', 'resolution', 'resolve', 'resource', 'respond', 'response', 'responsibility', 'responsive', 
-    'responsiveness', 'rest', 'restriction', 'result', 'resume', 'retirement', 'review', 'reward', 'right', 'risk', 'robust', 'role', 'rule', 'run', 
-    's', 'safety', 'salary', 'sale', 'scalability', 'scale', 'scenario', 'schedule', 'science', 'scope', 'screen', 'script', 'scripting', 'seamless', 
-    'search', 'second', 'secure', 'security', 'seek', 'self-learner', 'self-starter', 'sense', 'sensor', 'series', 'serve', 'server', 'service', 
-    'session', 'set', 'setup', 'share', 'side', 'simplicity', 'simulation', 'site', 'situation', 'size', 'skill', 'software', 'solution', 'solver', 
-    'someone', 'something', 'source', 'speaking', 'specification', 'speed', 'spending', 'spring', 'stability', 'stack', 'staff', 'stage', 'stakeholder', 
-    'standard', 'start', 'state', 'status', 'stay', 'stock', 'storage', 'store', 'story', 'storybook', 'strategy', 'structure', 'style', 'subject', 
-    'success', 'suite', 'supervision', 'support', 'system', 
-    'table', 'target', 'task', 'team', 'teammate', 'teamwork', 'tech', 'technique', 'technology', 'template', 'term', 'test', 'testing', 'thing', 
-    'thorough', 'thrive', 'time', 'timeline', 'today', 'tomorrow', 'tool', 'tooling', 'towards', 'track', 'tracking', 'trade-off', 'tradeoff', 
-    'traffic', 'training', 'transform', 'transformation', 'translating', 'transparency', 'travel', 'trend', 'triage', 'trouble', 'troubleshoot', 
-    'troubleshooting', 'ui', 'understand', 'understanding', 'update', 'upgrade', 'usability', 'usage', 'use', 'user', 'utility', 
-    'vacation', 'validation', 'value', 'variety', 'vendor', 'verification', 'verify', 'version', 'view', 'visa', 'vision', 'volume', 
-    'way', 'website', 'week', 'while', 'willingness', 'window', 'windows', 'wisdom', 'work', 'work-life', 'worker', 'workflow', 'working', 'world', 
-    'world-class', 'write', 'writing', 
-    'year', 'yesterday', 'yr',
-    'one','boot','query','root','university','setting','proven','level','roadmap','manual','expectation','brand','note','existing','ship','look',
-    'ticket','sex','religion','sexuality','gender','diversity','one','two','three','type','race'}
+    'area', 'organization', 'pipeline', 'ecosystem', 'expectation', 'browser', 'perform', 'collective', 'drive', 'contributes', 'report', 
+    'feature', 'fortune', 'collaborative', 'author', 'demo', 'team', 'input', 'culture', 'define', 'view', 'oversee', 'healthcare', 'coordination', 
+    'discus', 'update', 'ensures', 'error', 'clean', 'salary', 'provide', 'communicator', 'ok', 'issue', 'k', 'sexuality', 'professional', 
+    'solution', 'line', 'phone', 'assurance', 'behavior', 'storybook', 'accordance', 'creates', 'program', 'enhancement', 'country', 'coding', 
+    'conference', 'reuse', 'order', 'effectiveness', 'investigate', 'request', 'technique', 'student', 'purpose', 'computer', 'influence', 
+    'validation', 'compatibility', 'match', 'maintainability', 'demonstration', 'power', 'increase', 'abreast', 'second', 'tooling', 'dental', 
+    'adherence', 'regression', '*', 'side', 'delivery', 'verification', 'visa', 'event', 'meeting', 'object', 'intent', 'scale', 'produce', 
+    'referral', 'release', 'party', 'measure', 'image', 'training', 'performing', 'insurance', 'requirement', 'develop', 'communicate', 'gender', 
+    'three', 'role', 'in-house', 'material', 'use', 'compliance', 'delivers', 'stage', 'goal', 'enterprise', 'ease', 'anticipate', 'experience', 
+    'engage', 'insight', 'edge', 'foster', 'incident', 'windows', 'mockups', 'scope', 'range', 'mission', 'desktop', 'manager', 'holiday', 
+    'tutoring', 'prototype', 'foundation', 'work-life', 'proven', 'opportunity', 'employer', 'teammate', 'duty', 'worker', 'metric', 'company', 
+    'self-learner', 'ideation', 'landscape', 'qualification', 'facility', 'post-release', 'interview', 'existing', 'complexity', 'world', 
+    'element', 'payment', 'module', 'quality', 'documenting', 'eligibility', 'bottleneck', 'recommend', 'constructive', 'engagement', 'strategy', 
+    'proficiency', 'operating', 'person', 'conversation', 'contributor', 'consistency', 'bar', 'database', 'minute', 'solver', 'validate', 
+    'identity', 'world-class', 'lieu', 'contribute', 'status', 'development', 'methodology', 'overtime', 'ability', 'change', 'performance', 
+    'course', 'collaborates', 'online', 'industry', 'prepare', 'independence', 'sci', 'responsive', 'future', 'method', 'reach', 'query', 
+    'discipline', 'year', 'allowance', 'help', 'translate', 'machine', 'month', 'troubleshoot', 'generation', 'spring', 'bi', 'handling', 
+    'maintaining', 'contribution', 'call', 'participant', 'suite', 'someone', 'layer', 'card', 'build', 'serve', 'scalability', 'traffic', 
+    'innovation', 'executive', 'architect', 'flow', 'execute', 'master', 'troubleshooting', 'towards', 'improvement', 'facilitating', 'operation', 
+    'conduct', 'aim', 'record', 'run', 'template', 'parental', 'pay', 'individual', 'equation', 'factor', 'camera', 'form', 'week', 'cause', 
+    'applies', 'write', 'acquisition', 'building', 'downtime', 'volume', 'mentor', 'advancement', 'repair', 'interface', 'leverage', 'assist', 
+    'consideration', 'acceptance', 'retirement', 'community', 'risk', 'jr', 'model', 'log', 'guidance', 'functioning', 'software', 'integrity', 
+    'confer', 'supervision', 'table', 'tradeoff', 'roadmap', 'analytics', 'deploy', 'computing', 'fixing', 'mentorship', 'coverage', 'passionate', 
+    'robust', 'monitor', 'architecture', 'operate', 'storage', 'ticket', 'advocate', 'end-to-end', 'something', 'scientist', 'relevant', 'adheres', 
+    'page', 'expert', 'manipulation', 'office', 'balance', 'engineer', 'evaluate', 'disability', 'version', 'equipment', 'medium', 'government', 
+    'ship', 'file', 'decision', 'flexibility', 'response', 'feasibility', 'agility', 'designing', 'availability', 'tool', 'system', 'alternative', 
+    'peer', 'transparency', 'thorough', 'domain', 'resource', 'hour', 'appropriate', 'ceremony', 'opening', 'platform', 'duration', 'testing', 
+    'mentoring', 'matter', 'definition', 'progression', 'compose', 'editor', 'planning', 'rule', 'emphasis', 'phase', 'excellence', 'right', 
+    'position', 'create', 'product', 'setting', 'idea', 'health', 'conversion', 'audience', 'specification', 'collection', 'option', 'others', 
+    'root', 'making', 'on-going', 'religion', 'maintain', 'container', 'timeline', 'identify', 'prepares', 'expertise', 'equity', 'train', 
+    'application', 'seek', 'moral', 'play', 'vision', 'brand', 'evaluation', 'craft', 'member', 'asset', 'teamwork', 'sense', 'leader', 
+    'onboarding', 'account', 'alignment', 'sex', 'detail', 'cycle', 'engine', 'hands-on', 'intern', 'staff', 'custom', 'skill', 'store', 
+    'scripting', 'connectivity', 'resolution', 'transform', 'sale', 'deliver', 'orientation', 'study', 'two', 'responsibility', 'associate', 
+    'productivity', 'raise', 'service', 'vacation', 'transformation', 'hand', 'publication', 'etc', 'institution', 'configure', 'construction', 
+    'develops', 'hiring', 'functional', 'process', 'message', 'integrate', 'detection', 'stakeholder', 'capacity', 'champion', 'family', 'job', 
+    'estimation', 'identifies', 'liaison', 'refactor', 'dashboard', 'prioritization', 'million', 'exposure', 'site', 'approval', 'interact', 
+    'fulfillment', 'prospect', 'owner', 'way', 'working', 'yr', 'comment', 'consequence', 'verify', 'focus', 'approach', 'controller', 'addition', 
+    'authentication', 'speaking', 'target', 'thing', 'vendor', 'globe', 'tech', 'look', 'authorization', 'climate', 'tracking', 'triage', 'plan', 
+    'code', 'fix', 'identifying', 'spending', 'situation', 'impact', 'hp', 'interest', 'backlog', 'cutting', 'standard', 'limitation', 'exchange', 
+    'alternate', 'center', 'base', 'component', 'today', 'success', 'initiative', 'production', 'task', 'display', 'background', 'gather', 
+    'compiling', 'share', 'modification', 'junior', 'story', 'hire', 'life', 'simulation', 'website', 'offering', 'candidate', 'stack', 'partner', 
+    'installation', 'science', 'style', 'usability', 'field', 'trouble', 'yesterday', 'hardware', 'source', 'creator', 'optimization', 'output', 
+    'advice', 'completion', 'logic', 'ui', 'answer', 'interaction', 'collaborate', 'concept', 'cross-browser', 'connection', 'performs', 
+    'reference', 'analysis', 'internet', 'review', 'education', 'document', 'learning', 'department', 'understanding', 'finding', 'estimate', 
+    'thrive', 'race', 'case', 'stock', 'practice', 'clearance', 'in-depth', 'confluence', 'marketing', 'blog', 'network', 'relocation', 'attitude', 
+    'reporting', 'reliability', 'grooming', 'mobile', 'creativity', 'minimum', 'high-performance', 'infrastructure', 'resume', 'respond', 
+    'university', 'commitment', 'adoption', 'gathering', 'environment', 'sensor', 'package', 'milestone', 'pair', 'diagram', 'result', 'lunch', 
+    'support', 'certification', 'unit', 'knowledge', 'constraint', 'experiment', 'configuration', 'writing', 'leave', 'personnel', 'driver', 
+    'passion', 'learn', 'end', 'defect', 'participate', 'bug', 'modify', 'location', 'objective', 'providing', 'proficient', 'day', 'career', 
+    'type', 'ownership', 'simplicity', 'accuracy', 'grow', 'pull', 'city', 'information', 'reimbursement', 'customizes', 'size', 'research', 
+    'engineering', 'presentation', 'statement', 'cost', 'function', 'aspect', 'hibernate', 'hourly', 'permit', 'contractor', 'internship', 'lead', 
+    'algorithm', 'customer', 'desire', 'employee', 'framework', 'key', 'counterpart', 'guide', 'space', 'debugging', 'user', 'structure', 'one', 
+    'security', 'relationship', 'procedure', 'feedback', 'accountability', 'level', 'implement', 'db', 'workflow', 'coach', 'participates', 
+    'optimize', 'question', 'assignment', 'investigation', 'safety', 'advance', 'progress', 'library', 'facilitate', 'email', 'responsiveness', 
+    'cross', 'benefit', 'upgrade', 's', 'rest', 'respect', 'app', 'migration', 'language', 'stay', 'accessibility', 'series', 'debug', 'script', 
+    'cutting-edge', 'expense', 'collaboration', 'trade-off', 'gateway', 'journey', 'trend', 'discussion', 'demonstrate', 'orchestration', 
+    'enhance', 'provider', 'technology', 'secure', 'protocol', 'functionality', 'failure', 'check', 'college', 'variety', 'design', 'middleware', 
+    'translating', 'familiarity', 'courage', 'fundamental', 'director', 'programming', 'activity', 'dependency', 'mindset', 'apps', 'group', 
+    'effort', 'life-cycle', 'work', 'problem', 'instruction', 'deployment', 'coordinate', 'monitoring', 'refinement', 'integration', 
+    'problem-solving', 'date', 'facing', 'portfolio', 'efficiency', 'core', 'lifecycle', 'legacy', 'leadership', 'processing', 'accounting', 
+    'part', 'start', 'align', 'priority', 'citizen', 'capability', 'basis', 'stability', 'maintenance', 'while', 'self-starter', 'improve', 
+    'apply', 'class', 'scenario', 'please', 'bonus', 'criterion', 'conducting', 'colleague', 'entirety', 'trading', 'value', 'deliverable', 
+    'guideline', 'challenge', 'bs', 'people', 'pattern', 'offer', 'degree', 'compass', 'boot', 'developing', 'attention', 'reward', 'configures', 
+    'place', 'assessment', 'codebase', 'management', 'address', 'maintains', 'direction', 'subject', 'window', 'business', 'project', 'care', 
+    'need', 'manage', 'time', 'regulation', 'manner', 'citizenship', 'color', 'capital', 'schedule', 'remuneration', 'tomorrow', 'access', 'note', 
+    'seamless', 'participation', 'inquiry', 'assistance', 'execution', 'understand', 'willingness', 'utility', 'demand', 'analyst', 'principle', 
+    'complex', 'control', 'end-users', 'resolve', 'rate', 'amount', 'everyone', 'diversity', 'session', 'automation', 'repository', 'ethic', 
+    'earn', 'ground', 'mind', 'aid', 'connect', 'manual', 'rollout', 'efficient', 'administration', 'plus', 'recommendation', 'growth', 'contract',
+    'outcome', 'market', 'set', 'employment', 'communication', 'analyzes', 'point', 'deadline', 'applicant', 'speed', 'consumer', 'applying', 
+    'search', 'term', 'wisdom', 'policy', 'profession', 'usage', 'client', 'player', 'corporation', 'screen', 'meet', 'firm', 'home', 
+    'partnership', 'state', 'track', 'setup', 'merit', 'device', 'analyze', 'diverse', 'high-quality', 'excellent', 'restriction', 'comprehensive', 
+    'equivalent', 'money', 'data', 'test', 'hr', 'designer', 'developer', 'server', 'mechanism', 'travel', 'recognition', 'documentation', 
+    'pricing', 'implementation', 'layout', 'creation'}
 
-
-# tech words we want to make sure aren't ignored or stripped by NLTK logic by accident
-# our logic ideally allows any noun-like terms (that aren't stop words/ignored) to go through
-# but sometimes weird things happen, so just to be safe I am listing popular terms or ones that may potentially be erroneously ignored.
-SAVE_WORDS = {
-    'react','react.js','assembly','git','cloud','angular','angular.js','c#','c++','mobile','android','ios','oop','object-oriented',
-    'node','node.js','restful','go','golang','.net','linux','unix','macos','windows','web3','github','nosql','mysql','sql','aws','gcp',
-    'bash','kernel','material-ui','mui','vuetify','a*','js'
-}
+# tech words we specifically wanna look out for
+# not really that important in theory, but helps nonetheless to ensure these terms are not ignored or stripped out
+# especially useful if a term might be interpreted as not a noun (like 'react', which might be seen as a verb)
+os = {'linux','unix','debian','ubuntu','ios','windows','mac','android','mobile','macos'}
+prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js',}
+frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify'}
+db = {'sql','mysql','postgres','nosql','serverless'}
+misc = {'a*','kernel','git'}
+SAVE_WORDS = set().union(os,prog_lang,frameworks,db,misc)
 
 # phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
 SAVE_PHRASES = [
@@ -121,23 +118,12 @@ SAVE_PHRASES = [
     "bachelors degree",
     'master degree',
     "masters degree",
-    'system administrator',
     'full stack',
-    'team lead',
-    'senior engineer',
-    'senior developer',
-    'junior engineer',
-    'junior developer',
-    'web developer',
-    'application developer',
-    'application engineer',
-    'mobile developer',
     'google cloud',
     'oracle cloud',
     'amazon web service',
     'rest api',
     'restful api',
-    'system engineer',
     'natural language processing',
     'visual studio',
     'vs code',
@@ -145,8 +131,8 @@ SAVE_PHRASES = [
     'react js',
     'angular js',
     'vue js',
+    'node js',
     '3d modeling',
-
 ]
 
 # preferred names for conflated terms
@@ -184,6 +170,8 @@ visualstudio = 'Visual Studio'
 bachelor = "Bachelor's Degree"
 master = "Master's Degree"
 sql = 'SQL'
+nosql = 'NoSQL'
+ios = 'iOS'
 
 # terms to conflate into a singular preferred form
 # since there are many ways a given concept may be written, we conform
@@ -198,18 +186,22 @@ CONFLATE = {
     'react': react,
     'reactjs': react,
     'react.js': react,
+    'react js': react,
     # vue
     'vuejs': vue,
     'vue': vue,
     'vue.js': vue,
+    'vue js': vue,
     # angular
     'angular': angular,
     'angularjs': angular,
     'angular.js': angular,
+    'angular js': angular,
     #node
     'node': node,
     'nodejs': node,
     'node.js': node,
+    'node js': node,
     # golang
     'golang': golang,
     'go.lang': golang,
@@ -245,6 +237,7 @@ CONFLATE = {
     'mysql': sql,
     'postgre': sql,
     'postgresql': sql,
+    'nosql': nosql,
     # cloud
     'aws': aws,
     'amazon web service': aws,
@@ -287,5 +280,6 @@ CONFLATE = {
     'artificial intelligence': ai,
     'vs': visualstudio,
     'vs code': visualstudio,
-    'visual studio': visualstudio
+    'visual studio': visualstudio,
+    'ios': ios
 }

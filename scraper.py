@@ -11,7 +11,6 @@ from socket import error
 import json
 from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
-from test import test_jobIDs
 
 # to use your own dataset, change this import to point to your own version of terms.py
 from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
@@ -36,15 +35,6 @@ lemmatizer = WordNetLemmatizer()
 nltk_stop = set(stopwords.words('english'))
 STOP_WORDS = nltk_stop.union(STOP)
 
-
-# Data to get:
-#
-# freq of company | ?
-# freq of job title | ?
-# freq of seniority level | ?
-# years of experience freq range | Done
-# freq of programming languages | Done
-# freq of other tech concepts/key words | Done
 
 class classNames:
     title = 'topcard__title'
@@ -73,6 +63,7 @@ def consoleLog(s):
         print(s)
 
 def getSearchURL(keyword, start = 0, location = None):
+    'returns a URL for the job ID search HTTP request'
     url = SEARCH_URL.format(keyword)
 
     if (location != None):
@@ -82,6 +73,13 @@ def getSearchURL(keyword, start = 0, location = None):
     return url
 
 def scrapeLinkedIn(test_IDs = None, saveOutput = True):
+    '''
+    Entry point for running the linked-in web scraper.
+    Returns a frequency distribution of format: [(word, freq), (word2, freq), ...].
+
+    test_IDs: list of job IDs to use for testing - skips the getJobIDs step.
+    saveOutput: boolean to toggle if output should be saved to a json. json is saved to ./data/ directory.
+    '''
     # display config
     if (CONFIG.debug_mode):
         print('DEBUG MODE: on')
@@ -90,11 +88,12 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
         pause(3)
 
     if test_IDs != None:
+        print('{} test IDs provided! skipping jobID search.'.format(len(test_IDs)))
         jobIDs = test_IDs
     else:
         jobIDs = getJobIDs()
     
-    (years_of_exp, keywords_list, skipped_jobs) = mainWorkflow(jobIDs)
+    (keywords_list, skipped_jobs) = mainWorkflow(jobIDs)
 
     # if there were any skipped jobs, try re-doing them
     if (len(skipped_jobs) > 0):
@@ -113,7 +112,7 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
             consoleLog('iteration {}/{}'.format(i+1, retry))
             pause(0.5)
             last_skipped_count = len(skipped_jobs)
-            (skip_years_exp, skip_keywords, skipped_jobs) = mainWorkflow(skipped_jobs)
+            (skip_keywords, skipped_jobs) = mainWorkflow(skipped_jobs)
             if (last_skipped_count == len(skipped_jobs)):
                 no_change += 1
                 if (no_change >= 2):
@@ -121,12 +120,7 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
                     break
             else:
                 no_change = 0
-            # merge the years-of-experience dictionaries
-            for year in skip_years_exp:
-                if year in years_of_exp:
-                    years_of_exp[year] += skip_years_exp[year]
-                else:
-                    years_of_exp[year] = skip_years_exp[year]
+            
             keywords_list = keywords_list + skip_keywords
             consoleLog('pausing...')
             pause(5, force=True)
@@ -136,30 +130,29 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
     
-    summarizeResults(years_of_exp, keywords_list)
-    if not saveOutput:
-        print('Currently set to NOT save output data. Are you sure?')
-        ans = input("(y/n; n = save data!): ")
-        if ans.lower() != 'n':
-            return
-    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs))
+    if saveOutput:
+        today = datetime.today().strftime('%Y-%m-%d')
+        writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), today)
+
+    freq_dist = getFreqDist(keywords_list)
+    return freq_dist
+    
         
 
 def mainWorkflow(jobIDs):
     'performs the main web scraping workflow and returns the data'
-    (years_of_exp, keywords_list, summary_info) = scrapeJobs(jobIDs)
+    (keywords_list, summary_info) = scrapeJobs(jobIDs)
 
     (data_included, len_data, skipped_jobs) = summary_info
     if (CONFIG.debug_mode):
-        summarizeResults(years_of_exp, keywords_list, data_included, len_data)
+        freq_dist = getFreqDist(keywords_list)
+        summarizeResults(freq_dist, data_included, len_data)
 
-    return (years_of_exp, keywords_list, skipped_jobs)
+    return (keywords_list, skipped_jobs)
 
 def scrapeJobs(jobIDs):
     'scrapes the data for the given jobIDs'
     skippedJobs = set()
-
-    years_of_exp = {}
     keywords_list = []
 
     data_included_count = 0
@@ -182,15 +175,10 @@ def scrapeJobs(jobIDs):
                 print('reason: {}'.format(jobData[1]))
             skippedJobs.add(jobID)
             continue
-        exp = jobData[0]
+        
         keywords = jobData[1]
         data_included_count += 1
 
-        # years of experience
-        if (exp in years_of_exp):
-            years_of_exp[exp] += 1
-        else:
-            years_of_exp[exp] = 1
         # keywords
         keywords_list = keywords_list + keywords
 
@@ -200,10 +188,10 @@ def scrapeJobs(jobIDs):
             consoleLog('time elapsed: {}s ({}m)'.format(elapsed,round(elapsed / 60)))
     
     if (time_avg > 0):
-        time_avg = round(time_avg / len(jobIDs))
+        time_avg = round(time_avg / len(jobIDs) * 100) / 100
         consoleLog('average time per job: {} seconds'.format(time_avg))
     summary_info = (data_included_count, len(jobIDs), skippedJobs)
-    return (years_of_exp, keywords_list, summary_info)
+    return (keywords_list, summary_info)
 
 
 
@@ -261,6 +249,7 @@ def getJobIDs():
     return jobIDs
 
 def getJobData(jobID):
+    '''gets the data for a given job ID'''
     consoleLog('current jobID: {}'.format(jobID))
     retry = 0
     max_retry = 2
@@ -284,11 +273,6 @@ def getJobData(jobID):
             return (False, 'couldnt find description section')
     
     qualifications = getQualifications(descriptionSection)
-
-    if (qualifications[0] is not False) and CONFIG.debug_mode:
-        if qualifications[0] >= 10:
-            print('High YOE found: {}y [{}]'.format(qualifications[0], jobID))
-
     return qualifications
 
 
@@ -328,7 +312,6 @@ def getQualifications(description):
 def searchTags(tags):
     'search the tags for text and parse out keywords.'
     keyword_set = set()
-    max = 0
 
     # check bullet points for tech terms and other useful information
     for tag in tags:
@@ -342,18 +325,12 @@ def searchTags(tags):
 
         if (CONFIG.english_only and isForeignScript(s)):
             return (False, 'non-english')
-
-        # 'year' is present, so this line should be listing years experience
-        if 'year' in s:
-            n = getMaxNumber(s)
-            if n > max:
-                max = n
         
         # find keywords
         keywords = stripJunk(s)
         keyword_set = keyword_set.union(keywords)
     
-    return (max, list(keyword_set))
+    return (True, list(keyword_set))
 
 def findListTags(description):
     'finds <li> tags in the description'
@@ -389,18 +366,6 @@ def findString(tag):
     
     # otherwise, try the next child - sometimes there are empty tags next to navigable strings (no clue why)
     return tag.nextSibling
-
-def getMaxNumber(s):
-    'gets the max number listed in this string'
-    tempStr = s.lower()
-    max = 0
-
-    stripStr = re.sub('[^0-9]','_', tempStr)
-    nums = [n for n in stripStr.split('_') if n != '']
-    for n in nums:
-        if int(n) > max:
-            max = int(n)
-    return max
     
 
 # strips all "junk" from an input string and returns the keywords in a set
@@ -503,75 +468,74 @@ def isForeignScript(s):
         return True
     return False
 
-def summarizeResults(years_of_exp, keywords_list, data_included = 0, len_data = 0):
-    'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
-
+def getFreqDist(keywords_list):
     freq_keywords = nltk.FreqDist(keywords_list)
     freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
-    if CONFIG.enable_misc_logging:
-        print('==== Results ====')
-        print('\n')
-        print('Top 20 keywords:')
-        print('\n')
-        for (word, freq) in freq_keywords[:20]:
-            print('{}: {}'.format(word, freq))
-        print('\n')
-        print('(All the rest)')
-        print(freq_keywords[20:])
-        print('\n')
-        print('Frequency of years experience requirements')
-        print('\n')
-        print(years_of_exp)
-        print('\n')
+    return freq_keywords
 
-        if (data_included == 0 or len_data == 0):
-            return
-        print('\n')
-        print("== Search info ==")
-        print("total jobs found: {}".format(len_data))
-        print("jobs searched: {}/{} ({}%)".format(data_included,len_data,round(data_included/len_data*100)))
-        print("jobs skipped: {}/{}".format(len_data - data_included,len_data))
-    else:
-        print(freq_keywords)
+def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
+    'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
 
-def writeToJSON(keywords_list, jobCount):
+    print('==== Results ====')
+    print('\n')
+    print('Top 20 keywords:')
+    print('\n')
+    for (word, freq) in freq_keywords[:20]:
+        print('{}: {}'.format(word, freq))
+    print('\n')
+    print('(All the rest)')
+    print(freq_keywords[20:])
+    print('\n')
+
+    if (data_included == 0 or len_data == 0):
+        return
+    print('\n')
+    print("== Search info ==")
+    print("total jobs found: {}".format(len_data))
+    print("jobs searched: {}/{} ({}%)".format(data_included,len_data,round(data_included/len_data*100)))
+    print("jobs skipped: {}/{}".format(len_data - data_included,len_data))
+
+def writeToJSON(keywords_list, jobCount, filename):
+    'writes the keywords data to a local json file. file will be saved in a ./data/ directory.'
     freq_keywords = nltk.FreqDist(keywords_list)
     freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
     output = [jobCount] + freq_keywords
 
-    today = datetime.today().strftime('%Y-%m-%d')
-    with open('data/{}.json'.format(today), 'w', encoding='utf-8') as f:
+    with open('data/{}.json'.format(filename), 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=4)
-    consoleLog('Saved data to {}.json!'.format(today))
+    consoleLog('Saved data to {}.json!'.format(filename))
 
 
 # functions for testing stuff
 
 def testJob(jobID):
+    'test getting data from a given jobID'
     jobData = getJobData(jobID)
     print(jobData)
 
 def testSentence(sentence):
+    'test getting keywords from a given sentence string'
     print(sentence)
     print(stripJunk(element.NavigableString(sentence)))
 
 def manualFindIgnore(word_list):
+    '''
+    function to help you go through the output keywords and mark new ignore terms.
+    input the list/set of keywords output from a the search summary and go through each, deciding if it should be ignored or not.
+    '''
     ignore_add = set()
     for (word, freq) in word_list:
-        if word in SAVE_WORDS:
+        if word.lower() in SAVE_WORDS:
             continue
         print('{}: {}'.format(word, freq))
-        ans = input('add to ignore? (y/n): ')
+        ans = input('add to ignore? (y/n/x): ')
         if ans.lower() == 'y':
             ignore_add.add(word)
+        if ans.lower() == 'x':
+            break
     print('new ignore set: ')
     newIgnore = ignore_add.union(IGNORE)
     print(newIgnore)
 
-
-#for jobID in skiplist:
-#    testJob(jobID)
-#    ans = input('enter to continue: ')
-#    os.system('clear')
-
-scrapeLinkedIn(saveOutput=False)
+words = [('C', 56), ('front-end', 54), ('docker', 53), ('Node.js', 51), ('RESTful API', 48), ('linux', 47), ('.NET', 46), ('AWS', 45), ('microservices', 45), ('full stack', 44), ('scrum', 43), ('ci cd', 42), ('swift', 38), ('Go', 36), ('kubernetes', 36), ('scientist', 34), ('jenkins', 33), ('Machine Learning', 32), ('Azure', 32), ('jira', 32), ('oracle', 32), ('architect', 30), ('qa', 29), ('analyst', 29), ('devops', 29), ('sprint', 24), ('php', 24), ('Vue.js', 23), ('redux', 22), ('json', 20), ('Visual Studio', 20), ('Google Cloud', 19), ('sdlc', 19), ('terraform', 19), ('saas', 18), ('github', 18), ('Artificial Intelligence', 17), ('iac', 17), ('polygraph', 16), ('iOS', 16), ('android', 16), ('OOP', 16), ('html5', 15), ('milestone', 15), ('jquery', 15), ('person', 14), ('unix', 14), ('gitlab', 14), ('manufacturing', 14), ('mvc', 14), ('minute', 13), ('xml', 13), ('ms', 13), ('startup', 13), ('NoSQL', 13), ('aid', 13), ('serverless', 13), ('slack', 12), ('kafka', 12), ('visualization', 12), ('space', 12), ("Master's Degree", 12), ('sci', 12), ('mathematics', 12), ('modeling', 12), ('css3', 11), ('pas', 11), ('greenfield', 11), ('audience', 11), ('modernization', 11), ('cross', 11), ('class', 11), ('accounting', 11), ('j2ee', 11), ('stem', 11), ('connection', 10), ('micro', 10), ('cms', 10), ('data analysis', 10), ('junior', 10), ('finding', 10), ('author', 10), ('bar', 10), ('legacy', 10), ('junit', 10), ('Ruby', 10), ('flask', 10), ('vehicle', 10), ('check', 10), ('postgres', 10), ('theory', 9), ('asp.net', 9), ('lab', 9), ('course', 9), ('artifact', 9), ('mongodb', 9), ('statement', 9), ('rail', 9), ('graphql', 9), ('file', 9), ('post-release', 9), ('phone', 9), ('offering', 9), ('trading', 9), ('fulfillment', 9), ('internship', 9), ('parental', 9), ('elder', 9), ('tutoring', 9), ('containerization', 8), ('equity', 8), ('train', 8), ('repair', 8), ('elasticsearch', 8), ('redis', 8), ('downtime', 8), ('dod', 8), ('provider', 8), ('hiring', 8), ('reuse', 8), ('amazon', 8), ('intern', 8), ('desktop', 8), ('google', 8), ('http', 8), ('UX', 8), ('entity', 8), ('b.s', 8), ('truecommerce', 8), ('writer', 8), ('school', 8), ('shell', 8), ('bitbucket', 8), ('physic', 8), ('sustainment', 8), ('configure', 8), ('refactor', 8), ('ease', 8), ('summer', 8), ('path', 8), ('relief', 8), ('cryopreservation', 8), ('child', 8), ('disaster', 8), ('surrogacy', 8), ('adapt', 7), ('generate', 7), ('gui', 7), ('researcher', 7), ('chart', 7), ('memory', 7), ('devsecops', 7), ('anticipate', 7), ('subsystem', 7), ('salesforce', 7), ('debugs', 7), ('autonomy', 7), ('number', 7), ('aircraft', 7), ('eclipse', 7), ('networking', 7), ('awareness', 7), ('york', 7), ('division', 7), ('matlab', 7), ('video', 7), ('django', 7), ('origin', 7), ('excel', 7), ('verbal', 7), ('fast', 7), ('gain', 7), ('iteration', 7), ('implementing', 7), ('automate', 7), ('scaling', 7), ('solving', 7), ('fun', 7), ('figma', 7), ('wordpress', 7), ('thinking', 7), ('extension', 7), ('tuition', 7), ('curiosity', 7), ('compiler', 7), ('correctness', 7), ('everything', 7), ('schema', 7), ('budget', 6), ('endpoint', 6), ('resiliency', 6), ('writes', 6), ('apache', 6), ('processor', 6), ('measurement', 6), ('interoperability', 6), ('tester', 6), ('friday', 6), ('rotation', 6), ('Ruby-on-Rails', 6), ('lockheed', 6), ('full-time', 6), ('martin', 6), ('driven', 6), ('judgment', 6), ('trade', 6), ('micro-services', 6), ('us', 6), ('patient', 6), ('portion', 6), ('math', 6), ('agency', 6), ('instrument', 6), ('veteran', 6), ('powerpoint', 6), ('secret', 6), ('retrospective', 6), ('robustness', 6), ('b', 6), ('observability', 6), ('sc', 6), ('dev', 6), ('oversight', 6), ('item', 6), ('identification', 6), ('microservice', 6), ('desk', 6), ('db2', 6), ('batch', 6), ('age', 6), ('tuning', 6), ('codebases', 6), ('feel', 6), ('dive', 6), ('experimentation', 6), ('discovery', 6), ('apple', 6), ('aerospace', 6), ('topic', 6), ('full-stack', 6), ('front', 6), ('selection', 6), ('graduate', 6), ('contact', 6), ('bootstrap', 6), ('specialist', 6), ('suggestion', 6), ('compliant', 6), ('game', 6), ('listella', 5), ('jest', 5), ('shoot', 5), ('performant', 5), ('meta', 5), ('format', 5), ('inclusion', 5), ('act', 5), ('inception', 5), ('characteristic', 5), ('perspective', 5), ('robotics', 5), ('intelligence', 5), ('proof', 5), ('audit', 5), ('board', 5), ('hook', 5), ('servlets', 5), ('graphic', 5), ('flight', 5), ('clarity', 5), ('remote', 5), ('launch', 5), ('firmware', 5), ('mitigation', 5), ('history', 5), ('compensation', 5), ('top', 5), ('investment', 5), ('america', 5), ('art', 5), ('puppet', 5), ('letter', 5), ('supply', 5), ('sw', 5), ('regard', 5), ('latency', 5), ('sharing', 5), ('logging', 5), ('modifies', 5), ('kind', 5), ('hadoop', 5), ('kanban', 5), ('rust', 5), ('index', 5), ('progeny', 5), ('word', 5), ('bash', 5), ('sharepoint', 5), ('pressure', 5), ('jboss', 5), ('combination', 5), ('time-series', 5), ('eye', 5), ('advantage', 5), ('workshop', 5), ('forefront', 5), ('livesite', 5), ('oo', 5), ('servicing', 5), ('solve', 5), ('sas', 5), ('chain', 5), ('rdbms', 5), ('capture', 5), ('attend', 5), ('springboot', 5), ('selenium', 5), ('flowchart', 5), ('electronics', 5), ('conflict', 5), ('posse', 5), ('mentality', 5), ('mean', 5), ('install', 5), ('soap', 5), ('ide', 5), ('programmer', 5), ('inventory', 5), ('ops', 5), ('lambda', 5), ('dynamodb', 5), ('union', 5)]
+manualFindIgnore(words)
