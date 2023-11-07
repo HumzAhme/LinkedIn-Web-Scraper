@@ -217,16 +217,16 @@ def getJobIDs():
             res = requestURL(fmtUrl)
             # handle for if connection fails for some reason
             if res[0] is False:
+                attempts += 1
                 continue
-            res = requests.get(fmtUrl)
-            soup = BeautifulSoup(res.text, 'html.parser')
+            soup = BeautifulSoup(res[1], 'html.parser')
 
             jobDivs = soup.find_all(class_='base-card')
 
             # no jobs are found?
             if (len(jobDivs) == 0):
                 # if the URL returned nothing, try reloading it again a few times
-                if (len(jobIDs) < CONFIG.min_job_count) and (attempts < max_attempts):
+                if (attempts < max_attempts):
                     attempts += 1
                     consoleLog('retrying jobIDs url: attempt {}'.format(attempts))
                     pause(1, force=True)
@@ -235,7 +235,7 @@ def getJobIDs():
                 break
             # reset attempts if we succeed in getting a valid URL
             if (attempts > 0):
-                consoleLog('succeeded in getting url finally!')
+                consoleLog('succeeded in getting url finally! ({} attempts)'.format(attempts))
                 attempts = 0
 
             for div in jobDivs:
@@ -269,7 +269,7 @@ def getJobData(jobID):
             consoleLog('failed to load job data - trying again')
             pause(1, force=True)
     if (descriptionSection == None):
-            consoleLog(soup)
+            #consoleLog(soup)
             return (False, 'couldnt find description section')
     
     qualifications = getQualifications(descriptionSection)
@@ -278,8 +278,9 @@ def getJobData(jobID):
 
 def requestURL(url):
     'Try to fetch the URL, and handle if the connection fails'
+    headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
     try:
-        res = requests.get(url, timeout=10)
+        res = requests.get(url, headers=headers, timeout=10)
     except:
         errmsg = 'connection error: Failed to connect to {}'.format(url)
         if (CONFIG.debug_mode):
@@ -536,6 +537,3 @@ def manualFindIgnore(word_list):
     print('new ignore set: ')
     newIgnore = ignore_add.union(IGNORE)
     print(newIgnore)
-
-words = [('C', 56), ('front-end', 54), ('docker', 53), ('Node.js', 51), ('RESTful API', 48), ('linux', 47), ('.NET', 46), ('AWS', 45), ('microservices', 45), ('full stack', 44), ('scrum', 43), ('ci cd', 42), ('swift', 38), ('Go', 36), ('kubernetes', 36), ('scientist', 34), ('jenkins', 33), ('Machine Learning', 32), ('Azure', 32), ('jira', 32), ('oracle', 32), ('architect', 30), ('qa', 29), ('analyst', 29), ('devops', 29), ('sprint', 24), ('php', 24), ('Vue.js', 23), ('redux', 22), ('json', 20), ('Visual Studio', 20), ('Google Cloud', 19), ('sdlc', 19), ('terraform', 19), ('saas', 18), ('github', 18), ('Artificial Intelligence', 17), ('iac', 17), ('polygraph', 16), ('iOS', 16), ('android', 16), ('OOP', 16), ('html5', 15), ('milestone', 15), ('jquery', 15), ('person', 14), ('unix', 14), ('gitlab', 14), ('manufacturing', 14), ('mvc', 14), ('minute', 13), ('xml', 13), ('ms', 13), ('startup', 13), ('NoSQL', 13), ('aid', 13), ('serverless', 13), ('slack', 12), ('kafka', 12), ('visualization', 12), ('space', 12), ("Master's Degree", 12), ('sci', 12), ('mathematics', 12), ('modeling', 12), ('css3', 11), ('pas', 11), ('greenfield', 11), ('audience', 11), ('modernization', 11), ('cross', 11), ('class', 11), ('accounting', 11), ('j2ee', 11), ('stem', 11), ('connection', 10), ('micro', 10), ('cms', 10), ('data analysis', 10), ('junior', 10), ('finding', 10), ('author', 10), ('bar', 10), ('legacy', 10), ('junit', 10), ('Ruby', 10), ('flask', 10), ('vehicle', 10), ('check', 10), ('postgres', 10), ('theory', 9), ('asp.net', 9), ('lab', 9), ('course', 9), ('artifact', 9), ('mongodb', 9), ('statement', 9), ('rail', 9), ('graphql', 9), ('file', 9), ('post-release', 9), ('phone', 9), ('offering', 9), ('trading', 9), ('fulfillment', 9), ('internship', 9), ('parental', 9), ('elder', 9), ('tutoring', 9), ('containerization', 8), ('equity', 8), ('train', 8), ('repair', 8), ('elasticsearch', 8), ('redis', 8), ('downtime', 8), ('dod', 8), ('provider', 8), ('hiring', 8), ('reuse', 8), ('amazon', 8), ('intern', 8), ('desktop', 8), ('google', 8), ('http', 8), ('UX', 8), ('entity', 8), ('b.s', 8), ('truecommerce', 8), ('writer', 8), ('school', 8), ('shell', 8), ('bitbucket', 8), ('physic', 8), ('sustainment', 8), ('configure', 8), ('refactor', 8), ('ease', 8), ('summer', 8), ('path', 8), ('relief', 8), ('cryopreservation', 8), ('child', 8), ('disaster', 8), ('surrogacy', 8), ('adapt', 7), ('generate', 7), ('gui', 7), ('researcher', 7), ('chart', 7), ('memory', 7), ('devsecops', 7), ('anticipate', 7), ('subsystem', 7), ('salesforce', 7), ('debugs', 7), ('autonomy', 7), ('number', 7), ('aircraft', 7), ('eclipse', 7), ('networking', 7), ('awareness', 7), ('york', 7), ('division', 7), ('matlab', 7), ('video', 7), ('django', 7), ('origin', 7), ('excel', 7), ('verbal', 7), ('fast', 7), ('gain', 7), ('iteration', 7), ('implementing', 7), ('automate', 7), ('scaling', 7), ('solving', 7), ('fun', 7), ('figma', 7), ('wordpress', 7), ('thinking', 7), ('extension', 7), ('tuition', 7), ('curiosity', 7), ('compiler', 7), ('correctness', 7), ('everything', 7), ('schema', 7), ('budget', 6), ('endpoint', 6), ('resiliency', 6), ('writes', 6), ('apache', 6), ('processor', 6), ('measurement', 6), ('interoperability', 6), ('tester', 6), ('friday', 6), ('rotation', 6), ('Ruby-on-Rails', 6), ('lockheed', 6), ('full-time', 6), ('martin', 6), ('driven', 6), ('judgment', 6), ('trade', 6), ('micro-services', 6), ('us', 6), ('patient', 6), ('portion', 6), ('math', 6), ('agency', 6), ('instrument', 6), ('veteran', 6), ('powerpoint', 6), ('secret', 6), ('retrospective', 6), ('robustness', 6), ('b', 6), ('observability', 6), ('sc', 6), ('dev', 6), ('oversight', 6), ('item', 6), ('identification', 6), ('microservice', 6), ('desk', 6), ('db2', 6), ('batch', 6), ('age', 6), ('tuning', 6), ('codebases', 6), ('feel', 6), ('dive', 6), ('experimentation', 6), ('discovery', 6), ('apple', 6), ('aerospace', 6), ('topic', 6), ('full-stack', 6), ('front', 6), ('selection', 6), ('graduate', 6), ('contact', 6), ('bootstrap', 6), ('specialist', 6), ('suggestion', 6), ('compliant', 6), ('game', 6), ('listella', 5), ('jest', 5), ('shoot', 5), ('performant', 5), ('meta', 5), ('format', 5), ('inclusion', 5), ('act', 5), ('inception', 5), ('characteristic', 5), ('perspective', 5), ('robotics', 5), ('intelligence', 5), ('proof', 5), ('audit', 5), ('board', 5), ('hook', 5), ('servlets', 5), ('graphic', 5), ('flight', 5), ('clarity', 5), ('remote', 5), ('launch', 5), ('firmware', 5), ('mitigation', 5), ('history', 5), ('compensation', 5), ('top', 5), ('investment', 5), ('america', 5), ('art', 5), ('puppet', 5), ('letter', 5), ('supply', 5), ('sw', 5), ('regard', 5), ('latency', 5), ('sharing', 5), ('logging', 5), ('modifies', 5), ('kind', 5), ('hadoop', 5), ('kanban', 5), ('rust', 5), ('index', 5), ('progeny', 5), ('word', 5), ('bash', 5), ('sharepoint', 5), ('pressure', 5), ('jboss', 5), ('combination', 5), ('time-series', 5), ('eye', 5), ('advantage', 5), ('workshop', 5), ('forefront', 5), ('livesite', 5), ('oo', 5), ('servicing', 5), ('solve', 5), ('sas', 5), ('chain', 5), ('rdbms', 5), ('capture', 5), ('attend', 5), ('springboot', 5), ('selenium', 5), ('flowchart', 5), ('electronics', 5), ('conflict', 5), ('posse', 5), ('mentality', 5), ('mean', 5), ('install', 5), ('soap', 5), ('ide', 5), ('programmer', 5), ('inventory', 5), ('ops', 5), ('lambda', 5), ('dynamodb', 5), ('union', 5)]
-manualFindIgnore(words)

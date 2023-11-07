@@ -89,16 +89,17 @@ IGNORE = {
     'search', 'term', 'wisdom', 'policy', 'profession', 'usage', 'client', 'player', 'corporation', 'screen', 'meet', 'firm', 'home', 
     'partnership', 'state', 'track', 'setup', 'merit', 'device', 'analyze', 'diverse', 'high-quality', 'excellent', 'restriction', 'comprehensive', 
     'equivalent', 'money', 'data', 'test', 'hr', 'designer', 'developer', 'server', 'mechanism', 'travel', 'recognition', 'documentation', 
-    'pricing', 'implementation', 'layout', 'creation'}
+    'pricing', 'implementation', 'layout', 'creation', 'grow', 'age', 'tuning', 'measurement','co-founders','thinking','shortage','curve','hat',
+    'suggestion','workplace','concise'}
 
 # tech words we specifically wanna look out for
 # not really that important in theory, but helps nonetheless to ensure these terms are not ignored or stripped out
 # especially useful if a term might be interpreted as not a noun (like 'react', which might be seen as a verb)
 os = {'linux','unix','debian','ubuntu','ios','windows','mac','android','mobile','macos'}
-prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js',}
+prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','bash','swift'}
 frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify'}
 db = {'sql','mysql','postgres','nosql','serverless'}
-misc = {'a*','kernel','git'}
+misc = {'a*','kernel','git','sass'}
 SAVE_WORDS = set().union(os,prog_lang,frameworks,db,misc)
 
 # phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
@@ -146,6 +147,7 @@ golang = 'Go'
 oop = 'OOP'
 frontend = 'front-end'
 backend = 'back-end'
+fullstack = 'full-stack'
 rails = 'Ruby-on-Rails'
 ruby = 'Ruby'
 dotnet = '.NET'
@@ -269,6 +271,9 @@ CONFLATE = {
     'backend': backend,
     'back-end': backend,
     'back end': backend,
+    'full stack': fullstack,
+    'full-stack': fullstack,
+    'fullstack': fullstack,
     'api': api,
     'apis': api,
     'nlp': nlp,
