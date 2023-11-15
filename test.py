@@ -13,7 +13,7 @@ subset_md = test_jobIDs[:round(len(test_jobIDs)/4)]
 subset_lg = test_jobIDs[:round(len(test_jobIDs)/2)]
 
 # toggle set here
-id_set = subset_lg
+id_set = test_jobIDs
 
 print('test subset has {} job IDs. start test run!'.format(len(id_set)))
 keywords = scrapeLinkedIn(test_IDs=id_set)

@@ -134,7 +134,7 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
         today = datetime.today().strftime('%Y-%m-%d')
         writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), today)
 
-    freq_dist = getFreqDist(keywords_list)
+    freq_dist = getFreqDist(keywords_list, enforce_minimum=False)
     return freq_dist
     
         
@@ -405,9 +405,10 @@ def stripJunk(s):
     ignore = skip.union(IGNORE)
 
     # NLTK tries to find nouns (usually pretty well!)
-    tokenized = [word for word in nltk.word_tokenize(s)]
-    tagged = nltk.pos_tag(tokenized)
-    nouns = [lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
+    tokenized = nltk.word_tokenize(s)
+    # lemmatize and tag words
+    tagged = [(lemmatize(word), pos) for (word, pos) in nltk.pos_tag(tokenized)]
+    nouns = [word for (word, pos) in tagged if 'NN' in pos]
 
     # combine our saveWords and NLTK's nouns
     # remove stop words or ignore words, and then conflate any terms into
@@ -417,7 +418,7 @@ def stripJunk(s):
     for word in allTheWords:
         if (word in ignore):
             continue
-        if (word in STOP):
+        if (word in STOP_WORDS):
             continue
         if (word in CONFLATE):
             conflated.append(CONFLATE[word])
@@ -435,6 +436,7 @@ def stripJunk(s):
             input('press enter to continue: ')
 
     return output
+
 
 def lemmatize(word):
     'convert word into singular form'
@@ -469,9 +471,9 @@ def isForeignScript(s):
         return True
     return False
 
-def getFreqDist(keywords_list):
+def getFreqDist(keywords_list, enforce_minimum = True):
     freq_keywords = nltk.FreqDist(keywords_list)
-    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
+    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if (not enforce_minimum) or (freq >= CONFIG.keyword_freq)]
     return freq_keywords
 
 def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
@@ -498,8 +500,7 @@ def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
 
 def writeToJSON(keywords_list, jobCount, filename):
     'writes the keywords data to a local json file. file will be saved in a ./data/ directory.'
-    freq_keywords = nltk.FreqDist(keywords_list)
-    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if freq >= CONFIG.keyword_freq]
+    freq_keywords = getFreqDist(keywords_list)
     output = [jobCount] + freq_keywords
 
     with open('data/{}.json'.format(filename), 'w', encoding='utf-8') as f:
@@ -527,6 +528,8 @@ def manualFindIgnore(word_list):
     ignore_add = set()
     for (word, freq) in word_list:
         if word.lower() in SAVE_WORDS:
+            continue
+        if word.lower() in IGNORE:
             continue
         print('{}: {}'.format(word, freq))
         ans = input('add to ignore? (y/n/x): ')
