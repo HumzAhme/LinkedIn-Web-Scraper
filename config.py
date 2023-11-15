@@ -17,6 +17,8 @@ class config:
     enable_misc_logging = True
     # number of times the code can retry loading data for skipped jobs
     retry_count = 10
+    # set to enable saving results to google cloud
+    upload_cloud = True
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term

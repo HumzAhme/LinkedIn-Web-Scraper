@@ -72,7 +72,7 @@ def getSearchURL(keyword, start = 0, location = None):
     url = url + '&start={}'.format(start)
     return url
 
-def scrapeLinkedIn(test_IDs = None, saveOutput = True):
+def scrapeLinkedIn(test_IDs = None):
     '''
     Entry point for running the linked-in web scraper.
     Returns a frequency distribution of format: [(word, freq), (word2, freq), ...].
@@ -130,12 +130,10 @@ def scrapeLinkedIn(test_IDs = None, saveOutput = True):
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
     
-    if saveOutput:
-        today = datetime.today().strftime('%Y-%m-%d')
-        writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), today)
-
+    today = datetime.today().strftime('%Y-%m-%d')
+    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), today)
     freq_dist = getFreqDist(keywords_list, enforce_minimum=False)
-    return freq_dist
+    return (freq_dist, today)
     
         
 
