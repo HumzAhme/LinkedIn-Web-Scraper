@@ -21,7 +21,7 @@ class config:
     upload_cloud = True
     # set if you are doing a full test run. shortens the search process by limiting the number of jobs it searches.
     # also adds a "test" suffix to the json's filename so real data isn't accidentally overwritten on google cloud.
-    test_run = True
+    test_run = False
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
