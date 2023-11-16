@@ -6,4 +6,5 @@ from config import config
 (keywords, filename) = scrapeLinkedIn()
 summarizeResults(keywords)
 if config.upload_cloud:
-    upload_json('{}.json'.format(filename))
+    filename = '{}.json'.format(filename)
+    upload_json(filename)

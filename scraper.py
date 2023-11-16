@@ -81,11 +81,16 @@ def scrapeLinkedIn(test_IDs = None):
     saveOutput: boolean to toggle if output should be saved to a json. json is saved to ./data/ directory.
     '''
     # display config
+    print('=== config ===')
     if (CONFIG.debug_mode):
         print('DEBUG MODE: on')
         if (DEBUG.find_terms):
             print('FIND TERMS: on')
-        pause(3)
+    if (CONFIG.test_run):
+        print('TEST RUN! Results will be limited to speed up search.')
+    print('\n(To change settings, edit config.py)')
+    print('==============')
+    pause(3)
 
     if test_IDs != None:
         print('{} test IDs provided! skipping jobID search.'.format(len(test_IDs)))
@@ -104,9 +109,6 @@ def scrapeLinkedIn(test_IDs = None):
         no_change = 0
 
         for i in range(retry):
-            if (len(skipped_jobs) == 0):
-                consoleLog('all jobs searched!')
-                break
             if (i > 0):
                 consoleLog('restart!')
             consoleLog('iteration {}/{}'.format(i+1, retry))
@@ -122,6 +124,10 @@ def scrapeLinkedIn(test_IDs = None):
                 no_change = 0
             
             keywords_list = keywords_list + skip_keywords
+
+            if (len(skipped_jobs) == 0):
+                consoleLog('all jobs searched!')
+                break
             consoleLog('pausing...')
             pause(5, force=True)
         
@@ -130,10 +136,12 @@ def scrapeLinkedIn(test_IDs = None):
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
     
-    today = datetime.today().strftime('%Y-%m-%d')
-    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), today)
+    filename = datetime.today().strftime('%Y-%m-%d')
+    if (CONFIG.test_run):
+        filename = f'{filename}_test'
+    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), filename)
     freq_dist = getFreqDist(keywords_list, enforce_minimum=False)
-    return (freq_dist, today)
+    return (freq_dist, filename)
     
         
 
@@ -240,7 +248,14 @@ def getJobIDs():
                 jobID = div.get('data-entity-urn').split(":")[3]
                 jobIDs.add(jobID)
             
+            if (CONFIG.test_run):
+                if len(jobDivs) >= 300:
+                    break
             i = i + 25 # 25 jobs per results page
+
+        if (CONFIG.test_run):
+            if len(jobDivs) >= 300:
+                break
 
     if (CONFIG.debug_mode):
         print(jobIDs)

@@ -19,10 +19,13 @@ class config:
     retry_count = 10
     # set to enable saving results to google cloud
     upload_cloud = True
+    # set if you are doing a full test run. shortens the search process by limiting the number of jobs it searches.
+    # also adds a "test" suffix to the json's filename so real data isn't accidentally overwritten on google cloud.
+    test_run = True
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
     find_terms = False
     # words in this set will be paused on if find_terms is on
-    find_list = {'express','curve','soap','visual'}
+    find_list = {''}
 
