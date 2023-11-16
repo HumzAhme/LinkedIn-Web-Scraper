@@ -24,7 +24,7 @@ class config:
     # mostly for a quick test that nothing in the process crashes or has obvious errors
     test_run = False
     # threshold for allowing data into the results. represents the percentage of jobs a term appears in.
-    freq_threshold = 0.005
+    freq_threshold = 0.002
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
