@@ -86,6 +86,8 @@ def scrapeLinkedIn(test_IDs = None):
         print('DEBUG MODE: on')
         if (DEBUG.find_terms):
             print('FIND TERMS: on')
+            print('Searching for these terms:')
+            print(DEBUG.find_list)
     if (CONFIG.test_run):
         print('TEST RUN! Results will be limited to speed up search.')
     print('\n(To change settings, edit config.py)')
@@ -136,14 +138,25 @@ def scrapeLinkedIn(test_IDs = None):
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
     
+    freq_keywords = getFreqDist(keywords_list)
+    jobCount = len(jobIDs) - len(skipped_jobs)
+    filtered = filterResults(freq_keywords, jobCount)
+    output = [jobCount] + filtered
+
     filename = datetime.today().strftime('%Y-%m-%d')
     if (CONFIG.test_run):
         filename = f'{filename}_test'
-    writeToJSON(keywords_list, len(jobIDs) - len(skipped_jobs), filename)
-    freq_dist = getFreqDist(keywords_list, enforce_minimum=False)
-    return (freq_dist, filename)
+    writeToJSON(output, filename)
+    return (output, filename)
     
-        
+def filterResults(data, jobCount):
+    'does final filtering to remove unnecessary data'
+    filtered = []
+    for term in data:
+        if term[1] / jobCount < CONFIG.freq_threshold:
+            continue
+        filtered.append(term)
+    return filtered
 
 def mainWorkflow(jobIDs):
     'performs the main web scraping workflow and returns the data'
@@ -440,13 +453,16 @@ def stripJunk(s):
 
     output = set(conflated)
 
+    # also use the term finder - on the unrestricted list of terms though
     if (CONFIG.debug_mode and DEBUG.find_terms):
-        intersect = DEBUG.find_list.intersection(output)
+        intersect = DEBUG.find_list.intersection(set(allTheWords))
         if len(intersect) > 0:
             print('Found find_list terms!')
             print(intersect)
             print(s)
-            input('press enter to continue: ')
+            writeToLog(str(intersect))
+            writeToLog(s)
+            
 
     return output
 
@@ -511,15 +527,15 @@ def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
     print("jobs searched: {}/{} ({}%)".format(data_included,len_data,round(data_included/len_data*100)))
     print("jobs skipped: {}/{}".format(len_data - data_included,len_data))
 
-def writeToJSON(keywords_list, jobCount, filename):
+def writeToJSON(data, filename):
     'writes the keywords data to a local json file. file will be saved in a ./data/ directory.'
-    freq_keywords = getFreqDist(keywords_list)
-    output = [jobCount] + freq_keywords
-
     with open('data/{}.json'.format(filename), 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=4)
+        json.dump(data, f, ensure_ascii=False, indent=4)
     consoleLog('Saved data to {}.json!'.format(filename))
 
+def writeToLog(s):
+    with open('log.txt', 'a') as f:
+        f.write('\n'.join(s))
 
 # functions for testing stuff
 
