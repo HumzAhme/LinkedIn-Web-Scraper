@@ -132,9 +132,6 @@ def scrapeLinkedIn(test_IDs = None):
                 break
             consoleLog('pausing...')
             pause(5, force=True)
-        
-        # final summary
-        consoleLog('==== final summary (after retry attempts) ====')
         consoleLog('Jobs that couldnt be resolved:')
         consoleLog(skipped_jobs)
     
@@ -262,12 +259,12 @@ def getJobIDs():
                 jobIDs.add(jobID)
             
             if (CONFIG.test_run):
-                if len(jobDivs) >= 300:
+                if len(jobIDs) >= 300:
                     break
             i = i + 25 # 25 jobs per results page
 
         if (CONFIG.test_run):
-            if len(jobDivs) >= 300:
+            if len(jobIDs) >= 300:
                 break
 
     if (CONFIG.debug_mode):
@@ -411,14 +408,12 @@ def stripJunk(s):
     s = removeNonLatinText(s)
     if len(s) == 0:
         return set()
-    
     s = s.lower()
-    s = ', or '.join(s.split('/')) # replace / with ', or ' so they are seen as separate terms by NLTK
 
     # find any existing save words - words we want to intercept and save regardless of what NLTK thinks
     exclude = {',', ':', ';', '!', '(', ')', '[', ']'} # cut out these punc
     temp = ''.join(ch for ch in s if ch not in exclude)
-    # find phrases in the string that might include spaces
+    # find phrases in the string that might include spaces (or slashes, like 'pl/sql')
     # note: this may add performance slowdown since we are doing more iteration and checking for substrings here
     skip = set()
     savePhrases = []
@@ -426,15 +421,15 @@ def stripJunk(s):
         if phrase in temp:
             skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
             savePhrases.append(phrase)
+
+    temp = ', or '.join(temp.split('/')) # replace / with ', or ' so they are seen as separate terms and understood by NLTK
     saveWords = [word for word in temp.split() if word in SAVE_WORDS]
 
     ignore = skip.union(IGNORE)
 
-    # NLTK tries to find nouns (usually pretty well!)
-    tokenized = nltk.word_tokenize(s)
-    # lemmatize and tag words
-    tagged = [(lemmatize(word), pos) for (word, pos) in nltk.pos_tag(tokenized)]
-    nouns = [word for (word, pos) in tagged if 'NN' in pos]
+    # NLTK tries to find nouns
+    tagged = pos_tag(s)
+    nouns = [lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
 
     # combine our saveWords and NLTK's nouns
     # remove stop words or ignore words, and then conflate any terms into
@@ -462,10 +457,7 @@ def stripJunk(s):
             print(s)
             writeToLog(str(intersect))
             writeToLog(s)
-            
-
     return output
-
 
 def lemmatize(word):
     'convert word into singular form'
@@ -474,6 +466,11 @@ def lemmatize(word):
         return word
     return lemmatizer.lemmatize(word)
 
+def pos_tag(s):
+    'add part-of-speech tags to words in a sentence'
+    tokenized = nltk.word_tokenize(s)
+    tagged = [(word, pos) for (word, pos) in nltk.pos_tag(tokenized)]
+    return tagged
 
 def removeNonLatinText(s):
     'removes all characters from non-latin scripts (such as Japanese, Arabic, etc)'

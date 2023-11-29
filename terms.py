@@ -71,7 +71,7 @@ IGNORE = {
     'prototype', 'prototyping', 'provide', 'provider', 'pto', 'purpose', 'qa', 'qualification', 'quality', 'query', 'question', 'range', 'rate', 
     'recognition', 'recommendation', 'record', 'reduction', 'refactor', 'refactoring', 'regression', 'regulation', 'reimbursement', 'relationship', 
     'release', 'reliability', 'remediation', 'report', 'reporting', 'repository', 'request', 'requirement', 'research', 'resiliency', 'resolution', 
-    'resolve', 'resource', 'respect', 'response', 'responsibility', 'responsive', 'responsiveness', 'result', 'retirement', 'retrieval', 
+    'resolve', 'reference', 'resource', 'respect', 'response', 'responsibility', 'responsive', 'responsiveness', 'result', 'retirement', 'retrieval', 
     'retrospective', 'reuse', 'revenue', 'risk', 'roadmap', 'roadmaps', 'robustness', 'role', 'roll-out', 'root', 'safety', 'salary', 'sale', 
     'satisfaction', 'saving', 'scalability', 'scale', 'scaling', 'scenario', 'schedule', 'science', 'scientist', 'scope', 'score', 'scratch', 
     'screen', 'script', 'scripting', 'seamless', 'search', 'secure', 'security', 'selection', 'self-learner', 'self-starter', 'sense', 'sensor', 
@@ -93,10 +93,10 @@ IGNORE = {
 # not really that important in theory, but helps nonetheless to ensure these terms are not ignored or stripped out
 # especially useful if a term might be interpreted as not a noun (like 'react', which might be seen as a verb)
 os = {'linux','unix','debian','ubuntu','ios','windows','mac','android','mobile','macos'}
-prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','swift'}
-frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify'}
+prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','swift','matlab','r','lisp','scheme','cobol','prolog','objective-c',}
+frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify','svelte'}
 db = {'sql','mysql','postgres','nosql','serverless'}
-misc = {'a*','kernel','git','sass','docker'}
+misc = {'a*','git','sass','docker','kubernetes',}
 SAVE_WORDS = set().union(os,prog_lang,frameworks,db,misc)
 
 # phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
@@ -133,7 +133,13 @@ SAVE_PHRASES = [
     'neural network',
     'spring boot',
     'mongo db',
-    'large language model'
+    'large language model',
+    'visual basic',
+    'assembly language',
+    'tailwind css',
+    # slash terms
+    'pl/sql',
+
 ]
 
 # preferred names for conflated terms
@@ -267,6 +273,7 @@ CONFLATE = {
     'restful api': restAPI,
     'rest api': restAPI,
     'restful': restAPI,
+    'rest': restAPI,
     'oop': oop,
     'object-oriented': oop,
     'object-oriented-programming': oop,

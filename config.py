@@ -28,7 +28,7 @@ class config:
 
 class debugger:
     # find the string producing a certain term - script pauses to show you which string produced a certain term
-    find_terms = True
+    find_terms = False
     # words in this set will be paused on if find_terms is on
-    find_list = {'ass', 'b', 'container', 'rail'}
+    find_list = {'perl','cobol','fortran','scheme','msdos','objective-c'}
 
