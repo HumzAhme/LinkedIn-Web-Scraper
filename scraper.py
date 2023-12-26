@@ -9,6 +9,7 @@ import ssl
 import time
 from socket import error
 import json
+import os
 from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
 
@@ -526,7 +527,9 @@ def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
 
 def writeToJSON(data, filename):
     'writes the keywords data to a local json file. file will be saved in a ./data/ directory.'
-    with open('data/{}.json'.format(filename), 'w', encoding='utf-8') as f:
+    filepath = 'data/{}.json'.format(filename)
+    os.makedirs('./data', exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
     consoleLog('Saved data to {}.json!'.format(filename))
 

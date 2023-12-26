@@ -22,7 +22,7 @@ class config:
     # set if you are doing a full test run. shortens the search process by limiting the number of jobs it searches.
     # also adds a "test" suffix to the json's filename so real data isn't accidentally overwritten on google cloud.
     # mostly for a quick test that nothing in the process crashes or has obvious errors
-    test_run = False
+    test_run = True
     # threshold for allowing data into the results. represents the percentage of jobs a term appears in.
     freq_threshold = 0.002
 
