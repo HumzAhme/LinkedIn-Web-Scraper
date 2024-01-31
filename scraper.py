@@ -2,9 +2,6 @@ from bs4 import BeautifulSoup, element
 import requests
 import time
 import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 import ssl
 import time
 from socket import error
@@ -12,6 +9,8 @@ import json
 import os
 from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
+
+from engine import getFreqDist, engine_nltk
 
 # to use your own dataset, change this import to point to your own version of terms.py
 from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
@@ -25,16 +24,6 @@ except AttributeError:
     pass
 else:
     ssl._create_default_https_context = _create_unverified_https_context
-
-nltk.download('punkt', quiet=(not CONFIG.debug_mode))
-nltk.download('wordnet', quiet=(not CONFIG.debug_mode))
-nltk.download('stopwords', quiet=(not CONFIG.debug_mode))
-nltk.download('averaged_perceptron_tagger', quiet=(not CONFIG.debug_mode))
-
-lemmatizer = WordNetLemmatizer()
-
-nltk_stop = set(stopwords.words('english'))
-STOP_WORDS = nltk_stop.union(STOP)
 
 
 class classNames:
@@ -403,75 +392,25 @@ def stripJunk(s):
     if (s == None):
         return set()
     if (type(s) != element.NavigableString):
-        return set()
+        s = element.NavigableString(s)
 
     # there must be at least some ascii characters, even if non-english
     s = removeNonLatinText(s)
     if len(s) == 0:
         return set()
-    s = s.lower()
-
-    # find any existing save words - words we want to intercept and save regardless of what NLTK thinks
-    exclude = {',', ':', ';', '!', '(', ')', '[', ']'} # cut out these punc
-    temp = ''.join(ch for ch in s if ch not in exclude)
-    # find phrases in the string that might include spaces (or slashes, like 'pl/sql')
-    # note: this may add performance slowdown since we are doing more iteration and checking for substrings here
-    skip = set()
-    savePhrases = []
-    for phrase in SAVE_PHRASES:
-        if phrase in temp:
-            skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
-            savePhrases.append(phrase)
-
-    temp = ', or '.join(temp.split('/')) # replace / with ', or ' so they are seen as separate terms and understood by NLTK
-    saveWords = [word for word in temp.split() if word in SAVE_WORDS]
-
-    ignore = skip.union(IGNORE)
-
-    # NLTK tries to find nouns
-    tagged = pos_tag(s)
-    nouns = [lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
-
-    # combine our saveWords and NLTK's nouns
-    # remove stop words or ignore words, and then conflate any terms into
-    # their preferred forms
-    allTheWords = nouns + saveWords + savePhrases
-    conflated = []
-    for word in allTheWords:
-        if (word in ignore):
-            continue
-        if (word in STOP_WORDS):
-            continue
-        if (word in CONFLATE):
-            conflated.append(CONFLATE[word])
-        else:
-            conflated.append(word)
-
-    output = set(conflated)
+    
+    output = engine_nltk(s)
 
     # also use the term finder - on the unrestricted list of terms though
-    if (CONFIG.debug_mode and DEBUG.find_terms):
-        intersect = DEBUG.find_list.intersection(set(allTheWords))
-        if len(intersect) > 0:
-            print('Found find_list terms!')
-            print(intersect)
-            print(s)
-            writeToLog(str(intersect))
-            writeToLog(s)
+    #if (CONFIG.debug_mode and DEBUG.find_terms):
+    #    intersect = DEBUG.find_list.intersection(set(allTheWords))
+    #    if len(intersect) > 0:
+    #        print('Found find_list terms!')
+    #        print(intersect)
+    #        print(s)
+    #        writeToLog(str(intersect))
+    #        writeToLog(s)
     return output
-
-def lemmatize(word):
-    'convert word into singular form'
-    # prevent non-words ending with 's' from being lemmatized incorrectly
-    if len(word) <= 3:
-        return word
-    return lemmatizer.lemmatize(word)
-
-def pos_tag(s):
-    'add part-of-speech tags to words in a sentence'
-    tokenized = nltk.word_tokenize(s)
-    tagged = [(word, pos) for (word, pos) in nltk.pos_tag(tokenized)]
-    return tagged
 
 def removeNonLatinText(s):
     'removes all characters from non-latin scripts (such as Japanese, Arabic, etc)'
@@ -497,11 +436,6 @@ def isForeignScript(s):
     if (len(stripStr) < (original_length / 2)):
         return True
     return False
-
-def getFreqDist(keywords_list, enforce_minimum = True):
-    freq_keywords = nltk.FreqDist(keywords_list)
-    freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if (not enforce_minimum) or (freq >= CONFIG.keyword_freq)]
-    return freq_keywords
 
 def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
     'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'

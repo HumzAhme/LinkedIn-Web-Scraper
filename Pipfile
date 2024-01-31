@@ -8,6 +8,7 @@ beautifulsoup4 = "*"
 requests = "*"
 nltk = "*"
 google-cloud-storage = "*"
+spacy = "*"
 
 [dev-packages]
 

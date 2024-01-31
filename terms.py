@@ -96,7 +96,7 @@ os = {'linux','unix','debian','ubuntu','ios','windows','mac','android','mobile',
 prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','swift','matlab','r','lisp','scheme','cobol','prolog','objective-c',}
 frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify','svelte'}
 db = {'sql','mysql','postgres','nosql','serverless'}
-misc = {'a*','git','sass','docker','kubernetes',}
+misc = {'a*','git','sass','docker','kubernetes','automation','security'}
 SAVE_WORDS = set().union(os,prog_lang,frameworks,db,misc)
 
 # phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
@@ -125,7 +125,9 @@ SAVE_PHRASES = [
     'natural language processing',
     'visual studio',
     'vs code',
+    'ci/cd',
     'ci cd',
+    'continuous deployment',
     'react js',
     'angular js',
     'vue js',
@@ -186,6 +188,7 @@ css = 'CSS'
 html = 'HTML'
 llm = 'Large Language Model'
 container = 'Containerization'
+cicd = 'CI/CD'
 
 # terms to conflate into a singular preferred form
 # since there are many ways a given concept may be written, we conform
@@ -262,12 +265,15 @@ CONFLATE = {
     'azure': azure,
     'oracle cloud': oracloud,
     # misc
+    'computer science': 'Computer Science',
     'batchelor': bachelor,
     'bachelor': bachelor,
+    'bs': bachelor,
     'bachelor degree': bachelor,
     'bachelors degree': bachelor,
     'baccalaureate': bachelor,
     'masters': master,
+    'ms': master,
     'master degree': master,
     'masters degree': master,
     'restful api': restAPI,
@@ -315,5 +321,33 @@ CONFLATE = {
     'html5': html,
     'container': container,
     'containerization': container,
-    'containerisation': container
+    'containerisation': container,
+    'ci cd': cicd,
+    'ci/cd': cicd,
+    'ci': cicd,
+    'cd': cicd,
+    'continuous deployment': cicd
 }
+
+def format_term(word):
+    'Format a term to its preferred form'
+    word = word.lower()
+
+    if word in CONFLATE:
+        return CONFLATE[word]
+    
+    # detect JS libraries and format them as Name.js
+    if len(word) > 4 and word[-2:] == "js":
+        return format_js(word)
+
+    # make abbreviations all caps
+    if len(word) <= 3:
+        return word.upper()
+    # make regular words capitalized
+    return word.capitalize()
+
+def format_js(word):
+    # remove periods if they exist
+    word = word.replace(".", "")
+    name = word[:-2].capitalize()
+    return "{}.js".format(name)
