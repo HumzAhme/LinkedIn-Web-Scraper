@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from config import config as CONFIG, debugger as DEBUG
 
-from engine import getFreqDist, engine_nltk
+from engine import getFreqDist, run_engine
 
 # to use your own dataset, change this import to point to your own version of terms.py
 from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
@@ -379,7 +379,9 @@ def findString(tag):
             return s
     
     # otherwise, try the next child - sometimes there are empty tags next to navigable strings (no clue why)
-    return tag.nextSibling
+    if type(tag.nextSibling) == "NavigableString":
+        return tag.nextSibling
+    return None
     
 
 # strips all "junk" from an input string and returns the keywords in a set
@@ -399,7 +401,7 @@ def stripJunk(s):
     if len(s) == 0:
         return set()
     
-    output = engine_nltk(s)
+    output = run_engine(3, s)
 
     # also use the term finder - on the unrestricted list of terms though
     #if (CONFIG.debug_mode and DEBUG.find_terms):

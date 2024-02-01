@@ -1,6 +1,6 @@
 from scraper import stripJunk
 from terms import CONFLATE, format_term
-from engine import engine_spacify, engine_nltk
+from engine import engine_spacify, engine_nltk, run_engine
 
 cases = [
     [
@@ -60,7 +60,7 @@ cases = [
         ["Frontend", "Javascript", "React", "Next.js", "Angular"]
     ],
     [
-        "Experience with MongoDB, RestAPI, JavaScript/Typescript, CSS and HTML5.",
+        "Experience with MongoDB, Rest API, JavaScript/Typescript, CSS and HTML5.",
         ["MongoDB", "REST API", "Javascript", "Typescript", "CSS", "HTML"]
     ],
     [
@@ -93,7 +93,7 @@ cases = [
     ],
     [
         "Enhance our backend technology stack using modern tools: ReactJS/React Native, NodeJS, Kubernetes, GCP, MongoDB, Docker.",
-        ["backend", "React", "node.js", "kubernetes", "gcp", "MongoDB", "Docker"]
+        ["backend", "React", "React native", "node.js", "kubernetes", "gcp", "MongoDB", "Docker"]
     ],
     [
         "Experience setting up automation infrastructure using CI tools (ex. GitHub Actions, GitLab CI)",
@@ -126,6 +126,46 @@ cases = [
     [
         "Others : GitHub Actions, Docker, Terraform, Serverless Framework, etc.",
         ["github", "docker", "terraform", "serverless"]
+    ],
+    [
+        "3+ years of development experiences with Java and Spring or Springboot",
+        ["Java", "Spring", "Spring Boot"]
+    ],
+    [
+        "You will be able to create Proof Of Concept using high level languages such as Python, and rewrite those PoC in C/C++ to integrate the main product codebase.",
+        ["Python", "C", "C++"]
+    ],
+    [
+        "Proficiency in Containerization technologies (i.e Docker) and Version Control (i.e Git) for easy team collaboration.",
+        ["container", "Docker", "Git"]
+    ],
+    [
+        "3+ years of experience creating/maintaining and executing automation tests utilizing tools such as Selenium required (Python essential).",
+        ["automation", "Selenium", "Python"]
+    ],
+    [
+        "The Software Engineer will be responsible for developing and maintaining software applications, configuring existing systems and services, and integrating third-party solutions.",
+        []
+    ],
+    [
+        "Work with our UI designer and CEO to create new engaging features for our customers.",
+        []
+    ],
+    [
+        "They offer solutions for corporate contact centers and local governments that cover a wide range of support areas, from chat to telephone.",
+        []
+    ],
+    [
+        "we aim to achieve this goal through the development of core technologies that enable real-time teleportation of human presence and skills through robots and other mobility solutions.",
+        []
+    ],
+    [
+        "We are looking for an engineer who is a good communicator and is dedicated to solving people's problems.",
+        []
+    ],
+    [
+        "Being one of the largest e-commerce platforms in the world, the group has almost 100 million customers based in Japan and 1 billion globally as well, providing more than 70 services in a variety such as media, sports, telecommunication, e-commerce, payment services, financial services, etc.",
+        []
     ]
 ]
 
@@ -138,6 +178,9 @@ class colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
     WHITE = '\033[97m'
+
+def printColor(color: str, *args):
+    print(color, *args, colors.RESET)
 
 def judgeAccuracy(mode = 3):
     totalScore = 0
@@ -153,22 +196,12 @@ def judgeAccuracy(mode = 3):
 
         outOf += len(expOut)
 
-        out = set()
-
-        # test NLTK
-        if mode == 1:
-            out = engine_nltk(sentence)
-        # test Spacy
-        if mode == 2:
-            out = engine_spacify(sentence)
-        # test both together
-        if mode == 3:
-            out1 = engine_nltk(sentence)
-            out2 = engine_spacify(sentence)
-            out = out1.union(out2)
+        out = run_engine(mode, sentence)
 
         # judge accuracy of the output
         passTest = True
+        if (len(expOut) == 0) and (len(out) > 0):
+            passTest = False
         for term in expOut:
             if term in out:
                 score += 1
@@ -176,10 +209,13 @@ def judgeAccuracy(mode = 3):
                 passTest = False
         
         if not passTest:
-            print("{}(X) Failed case {} {}".format(colors.RED, i, colors.RESET))
+            printColor(colors.RED, "(X) Failed case {}".format(i))
             print("Input: {}".format(sentence))
             print("Output:", out)
             print("ExpOut:", expOut)
+            printColor(colors.YELLOW, "Missing:", [word for word in expOut if word not in out], "\n")
+            if len(expOut) == 0:
+                printColor(colors.YELLOW, "Expected no output")
         
         # see if extra terms were in the output
         if len(out) > len(expOut):
@@ -190,11 +226,12 @@ def judgeAccuracy(mode = 3):
         totalScore += score
         i += 1
     
-    print("Total tests run: {}".format(len(cases)))
-    print("Average accuracy: {}%".format(round(totalScore / outOf * 100)))
-    print("Average number of extra terms per case: {}".format(round(extraTermCount / len(cases) * 100) / 100))
-    if len(extraTerms) > 0:
-        print(extraTerms)
+    accuracy = round(totalScore / outOf * 100)
+    color = colors.GREEN if accuracy >= 80 else colors.YELLOW if accuracy >= 50 else colors.RED
+    printColor(colors.CYAN, "Total tests run: {}".format(len(cases)))
+    printColor(color, "Average accuracy: {}%".format(accuracy))
+    printColor(colors.CYAN, "Average number of extra terms per case: {}".format(round(extraTermCount / len(cases) * 100) / 100))
+    print(extraTerms)
 
 def judgeAccuracyNltk(): judgeAccuracy(mode=1)
 def judgeAccuracySpacy(): judgeAccuracy(mode=2)
@@ -207,20 +244,16 @@ def testEngine(n, spacy = False):
     out = set()
     if spacy:
         print("(spacy engine)")
-        out = engine_spacify(sentence)
+        out = run_engine(2, sentence)
     else:
         print("(nltk engine)")
-        out = engine_nltk(sentence)
+        out = run_engine(1, sentence)
 
     score = 0
 
     # judge accuracy of the output
     for term in expOut:
         term = format_term(term)
-        if term in CONFLATE:
-            term = CONFLATE[term]
-        else:
-            print("Warning: '{}' not in conflate list".format(term))
         if term in out:
             score += 1
     print("Input:", sentence)
@@ -235,5 +268,5 @@ def testSpacy(n): testEngine(n, True)
 def testNltk(n): testEngine(n, False)
 
 judgeAccuracy()
-#testNltk(18)
+#testNltk(4)
 #testSpacy(30)

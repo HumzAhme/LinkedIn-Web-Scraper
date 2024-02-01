@@ -21,7 +21,7 @@ IGNORE = {
     'address', 'adherence', 'adheres', 'administration', 'administrator', 'adoption', 'advancement', 'advantage', 'advice', 'advocate', 'agency', 
     'algorithm', 'align', 'alignment', 'ambiguity', 'analysis', 'analyst', 'analytics', 'analyze', 'analyzes', 'anticipate', 'app', 'applicant', 
     'application', 'approach', 'appropriate', 'apps', 'architect', 'architecture', 'area', 'artifact', 'aspect', 'ass', 'assessment', 'asset', 'assignment', 
-    'assist', 'assistance', 'associate', 'assurance', 'attention', 'attitude', 'audience', 'authentication', 'author', 'authorization', 'automation', 
+    'assist', 'assistance', 'associate', 'assurance', 'attention', 'attitude', 'audience', 'authentication', 'author', 'authorization', 
     'autonomy', 'availability', 'average', 'awareness', 'background', 'backlog', 'balance', 'bar', 'base', 'basis', 'batch', 'behavior', 'benefit', 
     'bonus', 'bottleneck', 'brand', 'browser', 'bs', 'budget', 'bug', 'build', 'building', 'business', 'call', 'candidate', 'capability', 'capacity', 
     'capture', 'care', 'career', 'case', 'cause', 'center', 'ceremony', 'certification', 'challenge', 'champion', 'chance', 'change', 'charge', 
@@ -40,7 +40,7 @@ IGNORE = {
     'discus', 'discussion', 'disease', 'display', 'diverse', 'diversity', 'document', 'documentation', 'documenting', 'domain', 'drive', 'driven', 
     'driver', 'duplication', 'duration', 'duty', 'ease', 'ecosystem', 'edge', 'education', 'effectiveness', 'efficiency', 'efficient', 'effort', 
     'element', 'embrace', 'empathy', 'emphasis', 'employee', 'employer', 'employment', 'end', 'end-to-end', 'end-user', 'end-users', 'endpoint', 
-    'energy', 'engage', 'engagement', 'engine', 'engineer', 'engineering', 'enhance', 'enhancement', 'ensures', 'enterprise', 'entity', 
+    'energy', 'engage', 'engagement', 'engine', 'engineer', 'engineering', 'enhance', 'enhancement', 'ensures', 'ensure', 'enterprise', 'entity', 
     'environment', 'equipment', 'equity', 'equivalent', 'error', 'estimate', 'estimation', 'etc', 'evaluate', 'evaluation', 'event', 'everyone', 
     'everything', 'evolution', 'example', 'excellence', 'exchange', 'execute', 'executes', 'execution', 'executive', 'exp', 'expectation', 
     'experience', 'experiment', 'expert', 'expertise', 'exposure', 'express', 'extensibility', 'extension', 'eye', 'facility', 'facing', 'factor', 
@@ -72,7 +72,7 @@ IGNORE = {
     'recognition', 'recommendation', 'record', 'reduction', 'refactor', 'refactoring', 'regression', 'regulation', 'reimbursement', 'relationship', 
     'release', 'reliability', 'remediation', 'report', 'reporting', 'repository', 'request', 'requirement', 'research', 'resiliency', 'resolution', 
     'resolve', 'reference', 'resource', 'respect', 'response', 'responsibility', 'responsive', 'responsiveness', 'result', 'retirement', 'retrieval', 
-    'retrospective', 'reuse', 'revenue', 'risk', 'roadmap', 'roadmaps', 'robustness', 'role', 'roll-out', 'root', 'safety', 'salary', 'sale', 
+    'retrospective', 'reuse', 'revenue', 'risk', 'roadmap', 'roadmaps', 'robustness','robust', 'role', 'roll-out', 'root', 'safety', 'salary', 'sale', 
     'satisfaction', 'saving', 'scalability', 'scale', 'scaling', 'scenario', 'schedule', 'science', 'scientist', 'scope', 'score', 'scratch', 
     'screen', 'script', 'scripting', 'seamless', 'search', 'secure', 'security', 'selection', 'self-learner', 'self-starter', 'sense', 'sensor', 
     'series', 'serve', 'server', 'service', 'session', 'set', 'setting', 'setup', 'share', 'sharing', 'ship', 'shortage', 'simple', 'simulation', 
@@ -86,17 +86,18 @@ IGNORE = {
     'understanding', 'unit', 'university', 'update', 'upgrade', 'us', 'usability', 'usage', 'use', 'user', 'utility', 'vacation', 'validate', 
     'validation', 'value', 'variety', 'vehicle', 'velocity', 'vendor', 'verification', 'version', 'video', 'view', 'vision', 'voice', 'volume', 
     'vulnerability', 'way', 'web', 'website', 'week', 'willingness', 'window', 'wireframes', 'word', 'work', 'workarounds', 'workflow', 'workplace', 
-    'world', 'world-class', 'write', 'writing', 'year', 'yrs', 'zone'
+    'world', 'world-class', 'write', 'writing', 'year', 'yrs', 'zone','proven','shape','transparency','sprint','must','fairness','paid','ethics','ethic','pace',
+    'apply','recommend','accordance','groundbreaking','fortune','ui','self-actualization'
 }
 
 # tech words we specifically wanna look out for
 # not really that important in theory, but helps nonetheless to ensure these terms are not ignored or stripped out
 # especially useful if a term might be interpreted as not a noun (like 'react', which might be seen as a verb)
 os = {'linux','unix','debian','ubuntu','ios','windows','mac','android','mobile','macos'}
-prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','swift','matlab','r','lisp','scheme','cobol','prolog','objective-c',}
-frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify','svelte'}
+prog_lang = {'javascript','java','typescript','go','golang','c','c#','c++','bash','.net','js','swift','matlab','r','lisp','scheme','cobol','prolog','objective-c','python','rust','ruby'}
+frameworks = {'react','react.js','reactjs','node.js','nodejs','angular','angular.js','angularjs','vue','vue.js','vuejs','material-ui','mui','vuetify','svelte','redux'}
 db = {'sql','mysql','postgres','nosql','serverless'}
-misc = {'a*','git','sass','docker','kubernetes','automation','security'}
+misc = {'a*','git','sass','docker','kubernetes','automation','security','remote','hybrid'}
 SAVE_WORDS = set().union(os,prog_lang,frameworks,db,misc)
 
 # phrases or terms that includes spaces - since sentences are split by spaces, we try to intercept these terms first
@@ -132,6 +133,7 @@ SAVE_PHRASES = [
     'angular js',
     'vue js',
     'node js',
+    'express js',
     'neural network',
     'spring boot',
     'mongo db',
@@ -139,197 +141,218 @@ SAVE_PHRASES = [
     'visual basic',
     'assembly language',
     'tailwind css',
+    'internet of things',
+    'react native',
     # slash terms
     'pl/sql',
 
 ]
 
 # preferred names for conflated terms
-javascript = 'Javascript'
-typescript = 'Typescript'
-node = 'Node.js'
-react = 'React.js'
-vue = 'Vue.js'
-angular = 'Angular.js'
-golang = 'Go'
-oop = 'OOP'
-frontend = 'front-end'
-backend = 'back-end'
-fullstack = 'full-stack'
-rails = 'Ruby-on-Rails'
-ruby = 'Ruby'
-dotnet = '.NET'
-api = 'API'
-restAPI = 'RESTful API'
-nlp = 'Natural Language Processing'
-sass = 'Sass'
-ux = 'UX'
-aws = 'AWS'
-gcp = 'Google Cloud'
-azure = 'Azure'
-oracloud = 'Oracle Cloud'
-python = 'Python'
-java = 'Java'
-ml = 'Machine Learning'
-ai = 'Artificial Intelligence'
-csharp = 'C#'
-cplus = 'C++'
-c = 'C'
-perl = 'Perl'
-visualstudio = 'Visual Studio'
-bachelor = "Bachelor's Degree"
-master = "Master's Degree"
-sql = 'SQL'
-nosql = 'NoSQL'
-ios = 'iOS'
-mongodb = 'MongoDB'
-microservices = 'Microservices'
-css = 'CSS'
-html = 'HTML'
-llm = 'Large Language Model'
-container = 'Containerization'
-cicd = 'CI/CD'
+class terms:
+    'preferred forms of common tech terms'
+    javascript = 'Javascript'
+    typescript = 'Typescript'
+    node = 'Node.js'
+    react = 'React.js'
+    vue = 'Vue.js'
+    angular = 'Angular.js'
+    express = 'Express.js'
+    golang = 'Go'
+    oop = 'OOP'
+    frontend = 'front-end'
+    backend = 'back-end'
+    fullstack = 'full-stack'
+    rails = 'Ruby-on-Rails'
+    ruby = 'Ruby'
+    dotnet = '.NET'
+    api = 'API'
+    restAPI = 'RESTful API'
+    nlp = 'Natural Language Processing'
+    sass = 'Sass'
+    ux = 'UX'
+    aws = 'AWS'
+    gcp = 'Google Cloud'
+    azure = 'Azure'
+    oracloud = 'Oracle Cloud'
+    python = 'Python'
+    java = 'Java'
+    ml = 'Machine Learning'
+    ai = 'Artificial Intelligence'
+    csharp = 'C#'
+    cplus = 'C++'
+    c = 'C'
+    perl = 'Perl'
+    visualstudio = 'Visual Studio'
+    bachelor = "Bachelor's Degree"
+    master = "Master's Degree"
+    sql = 'SQL'
+    nosql = 'NoSQL'
+    ios = 'iOS'
+    mongodb = 'MongoDB'
+    microservices = 'Microservices'
+    css = 'CSS'
+    html = 'HTML'
+    llm = 'Large Language Model'
+    container = 'Containerization'
+    cicd = 'CI/CD'
+    iot = 'IoT'
+    compsci = 'Computer Science'
+    git = 'Git'
+    github = 'GitHub'
 
 # terms to conflate into a singular preferred form
 # since there are many ways a given concept may be written, we conform
 # them all using this dictionary
 CONFLATE = {
     # javascript/typescript
-    'js': javascript,
-    'javascript': javascript,
-    'ts': typescript,
-    'typescript': typescript,
+    'js': terms.javascript,
+    'javascript': terms.javascript,
+    'ts': terms.typescript,
+    'typescript': terms.typescript,
     # react
-    'react': react,
-    'reactjs': react,
-    'react.js': react,
-    'react js': react,
+    'react': terms.react,
+    'reactjs': terms.react,
+    'react.js': terms.react,
+    'react js': terms.react,
     # vue
-    'vuejs': vue,
-    'vue': vue,
-    'vue.js': vue,
-    'vue js': vue,
+    'vuejs': terms.vue,
+    'vue': terms.vue,
+    'vue.js': terms.vue,
+    'vue js': terms.vue,
     # angular
-    'angular': angular,
-    'angularjs': angular,
-    'angular.js': angular,
-    'angular js': angular,
+    'angular': terms.angular,
+    'angularjs': terms.angular,
+    'angular.js': terms.angular,
+    'angular js': terms.angular,
     #node
-    'node': node,
-    'nodejs': node,
-    'node.js': node,
-    'node js': node,
+    'node': terms.node,
+    'nodejs': terms.node,
+    'node.js': terms.node,
+    'node js': terms.node,
+    # other js
+    'expressjs': terms.express,
+    'express js': terms.express,
+    'express.js': terms.express,
+    'express': terms.express,
     # golang
-    'golang': golang,
-    'go.lang': golang,
-    'go': golang,
+    'golang': terms.golang,
+    'go.lang': terms.golang,
+    'go': terms.golang,
     # ruby-on-rails
-    'ruby-on-rails': rails,
-    'ruby on rails': rails,
-    'rails': rails,
-    'rail': rails,
+    'ruby-on-rails': terms.rails,
+    'ruby on rails': terms.rails,
+    'rails': terms.rails,
+    'rail': terms.rails,
     # ruby
-    'ruby': ruby,
+    'ruby': terms.ruby,
     # .NET
-    '.net': dotnet,
-    '.NET': dotnet,
+    '.net': terms.dotnet,
+    '.NET': terms.dotnet,
     # Sass
-    'sass': sass,
-    'scss': sass,
+    'sass': terms.sass,
+    'scss': terms.sass,
     # python
-    'python': python,
-    'py': python,
+    'python': terms.python,
+    'py': terms.python,
     # java
-    'java': java,
+    'java': terms.java,
     # c#
-    'c#': csharp,
-    'c-sharp': csharp,
+    'c#': terms.csharp,
+    'c-sharp': terms.csharp,
     # c++
-    'c++': cplus,
+    'c++': terms.cplus,
     # c
-    'c': c,
+    'c': terms.c,
     # perl:
-    'perl': perl,
+    'perl': terms.perl,
     # sql
-    'sql': sql,
-    'mysql': sql,
-    'postgre': sql,
-    'postgresql': sql,
-    'nosql': nosql,
+    'sql': terms.sql,
+    'mysql': terms.sql,
+    'postgre': terms.sql,
+    'postgresql': terms.sql,
+    'nosql': terms.nosql,
     # cloud
-    'aws': aws,
-    'amazon web service': aws,
-    'gcp': gcp,
-    'google cloud': gcp,
-    'google cloud platform': gcp,
-    'azure': azure,
-    'oracle cloud': oracloud,
+    'aws': terms.aws,
+    'amazon web service': terms.aws,
+    'gcp': terms.gcp,
+    'google cloud': terms.gcp,
+    'google cloud platform': terms.gcp,
+    'azure': terms.azure,
+    'oracle cloud': terms.oracloud,
     # misc
-    'computer science': 'Computer Science',
-    'batchelor': bachelor,
-    'bachelor': bachelor,
-    'bs': bachelor,
-    'bachelor degree': bachelor,
-    'bachelors degree': bachelor,
-    'baccalaureate': bachelor,
-    'masters': master,
-    'ms': master,
-    'master degree': master,
-    'masters degree': master,
-    'restful api': restAPI,
-    'rest api': restAPI,
-    'restful': restAPI,
-    'rest': restAPI,
-    'oop': oop,
-    'object-oriented': oop,
-    'object-oriented-programming': oop,
-    'object oriented': oop,
-    'object oriented programming': oop,
-    'frontend': frontend,
-    'front-end': frontend,
-    'front end': frontend,
-    'backend': backend,
-    'back-end': backend,
-    'back end': backend,
-    'full stack': fullstack,
-    'full-stack': fullstack,
-    'fullstack': fullstack,
-    'api': api,
-    'apis': api,
-    'nlp': nlp,
-    'natural language processing': nlp,
-    'ux': ux,
-    'ml': ml,
-    'machine learning': ml,
-    'large language model': llm,
-    'llm': llm,
-    'ai': ai,
-    'artificial intelligence': ai,
-    'vs': visualstudio,
-    'vs code': visualstudio,
-    'visual studio': visualstudio,
-    'ios': ios,
-    'mongodb': mongodb,
-    'mongo db': mongodb,
-    'microservice': microservices,
-    'microservices': microservices,
-    'micro-services': microservices,
-    'micro-service': microservices,
-    'css': css,
-    'css3': css,
-    'html': html,
-    'html5': html,
-    'container': container,
-    'containerization': container,
-    'containerisation': container,
-    'ci cd': cicd,
-    'ci/cd': cicd,
-    'ci': cicd,
-    'cd': cicd,
-    'continuous deployment': cicd
+    'computer science': terms.compsci,
+    'compsci': terms.compsci,
+    'comp sci': terms.compsci,
+    'cs': terms.compsci,
+    'batchelor': terms.bachelor,
+    'bachelor': terms.bachelor,
+    'bs': terms.bachelor,
+    'bachelor degree': terms.bachelor,
+    'bachelors degree': terms.bachelor,
+    'baccalaureate': terms.bachelor,
+    'masters': terms.master,
+    'ms': terms.master,
+    'master degree': terms.master,
+    'masters degree': terms.master,
+    'restful api': terms.restAPI,
+    'rest api': terms.restAPI,
+    'restful': terms.restAPI,
+    'rest': terms.restAPI,
+    'oop': terms.oop,
+    'object-oriented': terms.oop,
+    'object-oriented-programming': terms.oop,
+    'object oriented': terms.oop,
+    'object oriented programming': terms.oop,
+    'frontend': terms.frontend,
+    'front-end': terms.frontend,
+    'front end': terms.frontend,
+    'backend': terms.backend,
+    'back-end': terms.backend,
+    'back end': terms.backend,
+    'full stack': terms.fullstack,
+    'full-stack': terms.fullstack,
+    'fullstack': terms.fullstack,
+    'api': terms.api,
+    'apis': terms.api,
+    'nlp': terms.nlp,
+    'natural language processing': terms.nlp,
+    'ux': terms.ux,
+    'ui/ux': terms.ux,
+    'ml': terms.ml,
+    'machine learning': terms.ml,
+    'large language model': terms.llm,
+    'llm': terms.llm,
+    'ai': terms.ai,
+    'artificial intelligence': terms.ai,
+    'vs': terms.visualstudio,
+    'vs code': terms.visualstudio,
+    'visual studio': terms.visualstudio,
+    'ios': terms.ios,
+    'mongodb': terms.mongodb,
+    'mongo db': terms.mongodb,
+    'microservice': terms.microservices,
+    'microservices': terms.microservices,
+    'micro-services': terms.microservices,
+    'micro-service': terms.microservices,
+    'css': terms.css,
+    'css3': terms.css,
+    'html': terms.html,
+    'html5': terms.html,
+    'container': terms.container,
+    'containerization': terms.container,
+    'containerisation': terms.container,
+    'ci cd': terms.cicd,
+    'ci/cd': terms.cicd,
+    'ci': terms.cicd,
+    'cd': terms.cicd,
+    'continuous deployment': terms.cicd,
+    'internet of things': terms.iot,
+    'iot': terms.iot,
+    'git': terms.git
 }
 
-def format_term(word):
+def format_term(word: str):
     'Format a term to its preferred form'
     word = word.lower()
 
@@ -346,7 +369,7 @@ def format_term(word):
     # make regular words capitalized
     return word.capitalize()
 
-def format_js(word):
+def format_js(word: str):
     # remove periods if they exist
     word = word.replace(".", "")
     name = word[:-2].capitalize()

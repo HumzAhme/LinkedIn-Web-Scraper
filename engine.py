@@ -3,7 +3,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import ssl
-import re
 from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, format_term
 from config import config as CONFIG
 
@@ -63,9 +62,7 @@ def engine_spacify(text):
     
     save_terms = find_save_terms(doc)
     word_list = word_list + save_terms
-    
-    output = normalize_results(word_list)
-    return set(output)
+    return word_list
 
 def find_save_terms(doc):
     if doc == None:
@@ -109,7 +106,6 @@ def engine_nltk(s, debug = False):
     # find any existing save words - words we want to intercept and save regardless of what NLTK thinks
     exclude = {',', ':', ';', '!', '(', ')', '[', ']'} # cut out these punc
     temp = ''.join(ch for ch in s if ch not in exclude).lower()
-    #temp = s.lower()
     # find phrases in the string that might include spaces (or slashes, like 'pl/sql')
     # note: this may add performance slowdown since we are doing more iteration and checking for substrings here
     skip = set()
@@ -119,31 +115,31 @@ def engine_nltk(s, debug = False):
             skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
             savePhrases.append(phrase)
 
-    temp = ', or '.join(temp.split('/')) # replace / with ', or ' so they are seen as separate terms and understood by NLTK
+    temp = temp.replace("/", " ") # replace slashes with spaces so it'll split better to find save words
     saveWords = [word for word in temp.split() if word in SAVE_WORDS]
+    if debug:
+        print("looking for save words:", temp.split())
+        print("save words:", saveWords)
 
-    ignore = skip.union(IGNORE)
+    ignore = skip.union(IGNORE, STOP_WORDS)
 
     s = ', or '.join(s.split('/')) # replace / with ', or ' so they are seen as separate terms and understood by NLTK
 
     # NLTK tries to find nouns
     tagged = pos_tag(s)
-    nouns = [lemmatize(word) for (word, pos) in tagged if 'NN' in pos]
+    nouns = [word for (word, pos) in tagged if 'NN' in pos]
 
-    # combine our saveWords and NLTK's nouns
-    # remove stop words or ignore words
-    allTheWords = nouns + saveWords + savePhrases
-    word_list = []
-    for word in allTheWords:
-        if (word in ignore):
-            continue
-        if (word in STOP_WORDS):
+    # remove ignore and stop words - save words and phrases are assumed fine, of course
+    if debug:
+        print("before filtering ignore:", nouns)
+    word_list = saveWords + savePhrases
+    for word in nouns:
+        word = word.lower()
+        if (word in ignore) or (lemmatize(word) in ignore):
             continue
         word_list.append(word)
     
-    output = normalize_results(word_list)
-    output = set(output)
-    return output
+    return word_list
 
 def pos_tag(s):
     'add part-of-speech tags to words in a sentence'
@@ -151,12 +147,17 @@ def pos_tag(s):
     tagged = [(word, pos) for (word, pos) in nltk.pos_tag(tokenized)]
     return tagged
 
-def lemmatize(word):
+def lemmatize(word: str):
     'convert word into singular form'
     # prevent non-words ending with 's' from being lemmatized incorrectly
     if len(word) <= 3:
         return word
-    return lemmatizer.lemmatize(word)
+    # make word lowercase - seems to help a lot for some reason
+    cap = word.istitle()
+    out = lemmatizer.lemmatize(word.lower())
+    if cap:
+        out = out.capitalize()
+    return out
 
 def getFreqDist(keywords_list, enforce_minimum = True):
     freq_keywords = nltk.FreqDist(keywords_list)
@@ -170,8 +171,47 @@ def getFreqDist(keywords_list, enforce_minimum = True):
 #
 # =====================================================================
 
-def normalize_results(word_list):
-    output = []
-    for word in word_list:
-        output.append(format_term(word))
+def run_engine(mode, s):
+    'runs the selected engines against the input string to extract a set of keywords and terms'
+    word_list_nltk = []
+    word_list_spacy = []
+
+    if mode == 1 or mode == 3:
+        word_list_nltk = engine_nltk(s)
+    if mode == 2 or mode == 3:
+        word_list_spacy = engine_spacify(s)
+    
+    word_list = word_list_nltk + word_list_spacy
+    output = normalize_results(word_list)
     return output
+
+def normalize_results(word_list):
+    output = set()
+    for word in word_list:
+        output.add(format_term(word))
+    return output
+
+def test_lemmatize():
+    tests = [
+        ("Engineers", "Engineer"),
+        ("engineers", "engineer"),
+        ("Requirements", "Requirement"),
+        ("requirements", "requirement"),
+        ("Responsibilities", "Responsibility"),
+        ("responsibilities", "responsibility")
+    ]
+    score = 0
+    outOf = 0
+    for case in tests:
+        out = lemmatize(case[0])
+        expOut = case[1]
+        if (out == expOut):
+            score += 1
+        else:
+            print("failed case:")
+            print("{} => {} (exp. {})".format(case[0], out, expOut))
+        outOf += 1
+    
+    print("Accuracy: {}%".format(round(score / outOf * 100)))
+
+#test_lemmatize()
