@@ -1,6 +1,5 @@
-from scraper import stripJunk
-from terms import CONFLATE, format_term
-from engine import engine_spacify, engine_nltk, run_engine
+from terms import format_term
+from engine import run_engine
 
 cases = [
     [

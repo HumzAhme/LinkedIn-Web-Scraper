@@ -34,7 +34,7 @@ IGNORE = {
     'coordinate', 'coordination', 'core', 'correct', 'correctness', 'cost', 'country', 'course', 'coverage', 'craft', 'create', 'creates', 
     'creation', 'creativity', 'creator', 'criterion', 'cross', 'culture', 'curiosity', 'curve', 'custom', 'customer', 'cutting-edge', 'cycle', 
     'dashboard', 'data', 'database', 'date', 'day', 'deadline', 'debt', 'debug', 'debugging', 'debugs', 'decision', 'defect', 'define', 
-    'definition', 'degree', 'deliver', 'deliverable', 'delivers', 'delivery', 'demo', 'demonstrate', 'dental', 'department', 'dependency', 
+    'definition', 'degree', 'deliver', 'deliverable', 'delivers', 'delivery', 'demo', 'demonstrate', 'dental', 'department', 'dependency',
     'deploy', 'deploying', 'deployment', 'description', 'design', 'designer', 'designing', 'desire', 'desktop', 'determines', 'dev', 'develop', 
     'developer', 'developing', 'development', 'develops', 'device', 'diagram', 'direction', 'disability', 'disaster', 'discipline', 'discovery', 
     'discus', 'discussion', 'disease', 'display', 'diverse', 'diversity', 'document', 'documentation', 'documenting', 'domain', 'drive', 'driven', 

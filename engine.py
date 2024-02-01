@@ -43,7 +43,13 @@ def get_ents(doc, debug = False):
     return output
 
 def engine_spacify(text):
+    '''
+    Uses Spacy to find keywords in a given string.
+
+    Breaks a given string down to its entities, and returns entities of specific categories.
+    '''
     doc = nlp(text)
+
     # get the entities from spacy
     ents = get_ents(doc, False)
     word_list = []
@@ -53,33 +59,12 @@ def engine_spacify(text):
     for ent in ents:
         for char in replaceChars:
             if char in ent:
-                ent = ent.replace(char, ",")
+                ent = ent.replace(char, " ")
         if "," in ent:
-            for word in ent.split(","):
-                word_list.append(word.strip())
-        else:
-            word_list.append(ent)
-    
-    save_terms = find_save_terms(doc)
-    word_list = word_list + save_terms
+            ent = ent.replace(",", " ")
+        for word in ent.split():
+            word_list.append(word.strip())
     return word_list
-
-def find_save_terms(doc):
-    if doc == None:
-        print("find_save_terms: no doc?")
-        return []
-    
-    output = []
-    for token in doc:
-        if token.text in SAVE_WORDS:
-            output.append(token.text)
-    
-    text = doc.text.lower()
-    for phrase in SAVE_PHRASES:
-        if phrase in text:
-            output.append(phrase)
-    
-    return output
 
 
 # =====================================================================
@@ -100,46 +85,23 @@ lemmatizer = WordNetLemmatizer()
 
 
 def engine_nltk(s, debug = False):
+    '''
+    Uses NLTK to find keywords in the given string.
+
+    As of now, it's pretty unsophisiticated - it just gets the nouns.
+    (well, it tries its best, but often non-nouns slip through lol)
+    '''
     if debug:
         print(s)
+    
+    # replace / with ', or ' so they are seen as separate terms and understood better by NLTK
+    s = ', or '.join(s.split('/')) 
 
-    # find any existing save words - words we want to intercept and save regardless of what NLTK thinks
-    exclude = {',', ':', ';', '!', '(', ')', '[', ']'} # cut out these punc
-    temp = ''.join(ch for ch in s if ch not in exclude).lower()
-    # find phrases in the string that might include spaces (or slashes, like 'pl/sql')
-    # note: this may add performance slowdown since we are doing more iteration and checking for substrings here
-    skip = set()
-    savePhrases = []
-    for phrase in SAVE_PHRASES:
-        if phrase in temp:
-            skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
-            savePhrases.append(phrase)
-
-    temp = temp.replace("/", " ") # replace slashes with spaces so it'll split better to find save words
-    saveWords = [word for word in temp.split() if word in SAVE_WORDS]
-    if debug:
-        print("looking for save words:", temp.split())
-        print("save words:", saveWords)
-
-    ignore = skip.union(IGNORE, STOP_WORDS)
-
-    s = ', or '.join(s.split('/')) # replace / with ', or ' so they are seen as separate terms and understood by NLTK
-
-    # NLTK tries to find nouns
+    # tag the 'part of speech' for each word and get the nouns from the string
     tagged = pos_tag(s)
     nouns = [word for (word, pos) in tagged if 'NN' in pos]
-
-    # remove ignore and stop words - save words and phrases are assumed fine, of course
-    if debug:
-        print("before filtering ignore:", nouns)
-    word_list = saveWords + savePhrases
-    for word in nouns:
-        word = word.lower()
-        if (word in ignore) or (lemmatize(word) in ignore):
-            continue
-        word_list.append(word)
     
-    return word_list
+    return nouns
 
 def pos_tag(s):
     'add part-of-speech tags to words in a sentence'
@@ -154,12 +116,21 @@ def lemmatize(word: str):
         return word
     # make word lowercase - seems to help a lot for some reason
     cap = word.istitle()
-    out = lemmatizer.lemmatize(word.lower())
+    temp = word.lower()
+
+    # attempt lemmatization - if nothing changes, try lemmatizing as other parts of speech
+    out = lemmatizer.lemmatize(temp)
+    if out == temp:
+        out = lemmatizer.lemmatize(temp, "v")
+    if out == temp:
+        out = lemmatizer.lemmatize(temp, "a")
+
     if cap:
         out = out.capitalize()
     return out
 
 def getFreqDist(keywords_list, enforce_minimum = True):
+    'uses NLTK to calculate a frequency distribution for the words in a list'
     freq_keywords = nltk.FreqDist(keywords_list)
     freq_keywords = [(word, freq) for (word, freq) in freq_keywords.most_common() if (not enforce_minimum) or (freq >= CONFIG.keyword_freq)]
     return freq_keywords
@@ -176,19 +147,60 @@ def run_engine(mode, s):
     word_list_nltk = []
     word_list_spacy = []
 
+    # find the save terms from this string
+    saveTerms, skip = find_save_terms(s)
+
+    # use an NLP engine to find keywords and terms
     if mode == 1 or mode == 3:
         word_list_nltk = engine_nltk(s)
     if mode == 2 or mode == 3:
         word_list_spacy = engine_spacify(s)
     
+    # remove the ignore terms
     word_list = word_list_nltk + word_list_spacy
+    word_list = filter_bad_terms(word_list, skip)
+
+    # join it all together and normalize the results
+    word_list = word_list + saveTerms
     output = normalize_results(word_list)
     return output
 
 def normalize_results(word_list):
+    'put terms in their standardized/preferred format, and remove any duplicates'
     output = set()
     for word in word_list:
         output.add(format_term(word))
+    return output
+
+def find_save_terms(s):
+     # remove punctuation that might interfere and make lowercase
+    exclude = {',', ':', ';', '!', '(', ')', '[', ']'}
+    temp = ''.join(ch for ch in s if ch not in exclude).lower()
+
+    # find phrases in the string that might include spaces (or slashes, like 'pl/sql')
+    skip = set() # keep track of the pieces of phrases that we add, so they aren't re-added a second time
+    savePhrases = []
+    for phrase in SAVE_PHRASES:
+        if phrase in temp:
+            skip = skip.union(set(phrase.split())) # don't count this word individually since its part of a phrase
+            savePhrases.append(phrase)
+
+    # find individual save words
+    temp = temp.replace("/", " ") # replace slashes with spaces so it'll split those terms too
+    saveWords = [word for word in temp.split() if word in SAVE_WORDS]
+
+    return saveWords + savePhrases, skip
+
+def filter_bad_terms(words: list[str], skip: set[str]):
+    ignore = IGNORE.union(skip, STOP_WORDS)
+    output = []
+
+    for word in words:
+        word = word.lower()
+        if (word in ignore) or (lemmatize(word) in ignore):
+            continue
+        output.append(word)
+    
     return output
 
 def test_lemmatize():
@@ -198,7 +210,10 @@ def test_lemmatize():
         ("Requirements", "Requirement"),
         ("requirements", "requirement"),
         ("Responsibilities", "Responsibility"),
-        ("responsibilities", "responsibility")
+        ("responsibilities", "responsibility"),
+        ("provides", "provide"),
+        ("relies", "rely"),
+        ("Improves", "Improve"),
     ]
     score = 0
     outOf = 0

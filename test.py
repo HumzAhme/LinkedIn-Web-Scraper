@@ -20,5 +20,5 @@ subset_lg = test_jobIDs[:round(len(test_jobIDs)/2)]
 id_set = subset_xs
 
 print('test subset has {} job IDs. start test run!'.format(len(id_set)))
-keywords = scrapeLinkedIn()[0]
+keywords = scrapeLinkedIn(test_IDs=id_set)[0]
 summarizeResults(keywords[1:])
