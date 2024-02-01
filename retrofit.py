@@ -1,5 +1,5 @@
 from googlecloud import download, upload_json
-from terms import IGNORE, CONFLATE
+from terms import IGNORE, CONFLATE, format_term
 from json import dump
 from config import config
 
@@ -41,22 +41,32 @@ def applyConflate(data):
         change = False
         newJson = []
         confl = []
+        wordsUpdated = 0
         newJson.append(json[0]) # study count
         for i in range(1, len(json)):
             word = json[i][0]
-            if word in CONFLATE:
-                conflated = CONFLATE[word]
-                # if the word isn't already in its conflated form, then 
+            # see if word needs to be conflated to a preferred form
+            if word.lower() in CONFLATE:
+                conflated = CONFLATE[word.lower()]
                 if word != conflated:
                     confl.append((word, conflated))
                     newJson.append((conflated, json[i][1]))
                     change = True
+                    continue
+            # see if word should be formatted differently
+            else:
+                newFormat = format_term(word)
+                if word != newFormat:
+                    newJson.append((newFormat, json[i][1]))
+                    change = True
+                    wordsUpdated += 1
                     continue
             newJson.append(json[i])
         if change:
             print(f'{name}.json: conflated {len(confl)} terms')
             for (before, after) in confl:
                 print(f'{before} -> {after}')
+            print(f'Number of terms reformatted: {wordsUpdated}')
             
             # combine all identical terms, since there may be multiple forms of the same term that were conflated
             studyCount = newJson[0]

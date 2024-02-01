@@ -87,7 +87,7 @@ IGNORE = {
     'validation', 'value', 'variety', 'vehicle', 'velocity', 'vendor', 'verification', 'version', 'video', 'view', 'vision', 'voice', 'volume', 
     'vulnerability', 'way', 'web', 'website', 'week', 'willingness', 'window', 'wireframes', 'word', 'work', 'workarounds', 'workflow', 'workplace', 
     'world', 'world-class', 'write', 'writing', 'year', 'yrs', 'zone','proven','shape','transparency','sprint','must','fairness','paid','ethics','ethic','pace',
-    'apply','recommend','accordance','groundbreaking','fortune','ui','self-actualization'
+    'apply','recommend','accordance','groundbreaking','fortune','ui','self-actualization','ceo','complies','electrical','third','w','gender','race'
 }
 
 # tech words we specifically wanna look out for
