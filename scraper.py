@@ -2,28 +2,14 @@ from bs4 import BeautifulSoup, element
 import requests
 import time
 import re
-import ssl
-import time
-from socket import error
+#from socket import error
 import json
 import os
 from datetime import datetime
+
 from config import config as CONFIG, debugger as DEBUG
-
 from engine import getFreqDist, run_engine
-
-# to use your own dataset, change this import to point to your own version of terms.py
-from terms import IGNORE, STOP, SAVE_WORDS, SAVE_PHRASES, CONFLATE
-
-
-# workaround to get nltk to work...
-# https://stackoverflow.com/questions/38916452/nltk-download-ssl-certificate-verify-failed
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
+from terms import IGNORE, SAVE_WORDS
 
 
 class classNames:
