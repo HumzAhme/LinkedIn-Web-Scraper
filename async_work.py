@@ -1,44 +1,15 @@
 import time
 import asyncio
-import aiohttp
-from parsing import parseJobIDsFromPage
+from parsing import parseJobIDsFromPage, getJobData
+from request_url import getSearchURL, requestUrl
 
-
-SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={0}'
-JOB_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'
 ITER = 3
-
-def getSearchURL(keyword, start = 0, location = None):
-    'returns a URL for the job ID search HTTP request'
-    url = SEARCH_URL.format(keyword)
-
-    if (location != None):
-        url = url + '&location={}'.format(location)
     
-    url = url + '&start={}'.format(start)
-    return url
-
-async def requestUrl(url):
-    'Try to fetch the URL asynchronously and handle connection errors'
-    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=10, ssl=False) as response:
-                text = await response.text()
-                return (True, text)
-    except aiohttp.ClientError as e:
-        errmsg = f'Connection error: Failed to connect to {url} - {str(e)}'
-        print(errmsg)
-        return (False, errmsg)
-    except asyncio.TimeoutError:
-        timeout_msg = f'Timeout error: Connection to {url} timed out.'
-        print(timeout_msg)
-        return (False, timeout_msg)
-    except Exception as e:
-        generic_msg = f'Unexpected error: {str(e)}'
-        print(generic_msg)
-        return (False, generic_msg)
+# ==========================================================================================================
+#
+# Searching Job IDs
+#
+# ==========================================================================================================
 
 def getJobSearchURLs(keyword: str):
     'gets a list of URLs representing searching for jobs based on a keyword. Used for finding job IDs.'
@@ -186,6 +157,87 @@ def getJobIDsForListOfKeywords(keywords: list[str], use_async = True) -> set[str
     print("==============================================")
     
     return jobIDs
+
+# ==========================================================================================================
+#
+# Getting Job Data
+#
+# ==========================================================================================================
+
+def getAllJobData(jobIDs: set[str]):
+    return asyncio.run(getJobDataAsync(jobIDs))
+
+async def getJobDataAsync(jobIDs: set[str]):
+
+    jobIDsList = list(jobIDs)
+    # split the jobIDs into chunks according to our number of workers
+    numWorkers = 4
+    chunkSize = len(jobIDsList) // numWorkers
+    chunks = [jobIDsList[i:i+chunkSize] for i in range(0, len(jobIDsList), chunkSize)]
+    tasks = []
+    for i, chunk in enumerate(chunks):
+        task = asyncio.create_task(scrapeJobsWorker(chunk, i + 1))
+        tasks.append(task)
+    
+    begin = time.perf_counter()
+
+    results = await asyncio.gather(*tasks)
+
+    # combine all the lists of keywords into one
+    keywords_list = []
+    data_incl_count = 0
+    total_jobs = 0
+    skipped_jobs = set()
+    for word_list, summary in results:
+        keywords_list.extend(word_list)
+        data_incl_count += summary[0]
+        total_jobs += summary[1]
+        skipped_jobs = skipped_jobs.union(summary[2])
+
+    timeTaken = time.perf_counter() - begin
+    seconds = round(timeTaken)
+    minutes = round(seconds / 60)
+    print("==============================================")
+    print(f"Job data parsing complete: took {seconds} seconds (~{minutes} m)")
+    print("==============================================")
+
+    summary_info = (data_incl_count, total_jobs, skipped_jobs)
+    return (keywords_list, summary_info)
+
+async def scrapeJobsWorker(jobIDs: list[str], workerID: int):
+    skippedJobs = set()
+    keywords_list = []
+
+    data_included_count = 0
+    step = 0
+    begin = time.perf_counter()
+    lastLog = time.perf_counter()
+
+    print(f"START: Worker {workerID} is scraping {len(jobIDs)} jobs.")
+
+    for jobID in jobIDs:
+        step += 1
+        keywords = await getJobData(jobID)
+        if keywords == None:
+            skippedJobs.add(jobID)
+            continue
+        data_included_count += 1
+        keywords_list = keywords_list + keywords
+
+        # log progress every minute-ish
+        if (step % 10 == 0 and time.perf_counter() - lastLog >= 60):
+            lastLog = time.perf_counter()
+            perc = round(step/len(jobIDs)*100)
+            print(f"Worker {workerID}: {perc}% done ({step}/{len(jobIDs)})")
+            elapsed = round(time.perf_counter() - begin)
+            print('time elapsed: {}s ({}m)'.format(elapsed,round(elapsed / 60)))
+    
+    timeTaken = time.perf_counter() - begin
+    seconds = round(timeTaken)
+    minutes = round(seconds / 60)
+    print(f"END: Worker {workerID} finished in {seconds} seconds (~{minutes} m) - skipped {len(skippedJobs)} jobs.")
+    summary_info = (data_included_count, len(jobIDs), skippedJobs)
+    return keywords_list, summary_info
 
 # ==========================================================================================================
 #

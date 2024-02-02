@@ -1,3 +1,5 @@
+import time
+
 class config:
     # keyword to include in the job search URL
     keywords = ['Software Developer','Software Engineer', 'Backend Engineer', 'Frontend Engineer', 'Fullstack Engineer']
@@ -32,3 +34,12 @@ class debugger:
     # words in this set will be paused on if find_terms is on
     find_list = {'perl','cobol','fortran','scheme','msdos','objective-c'}
 
+def pause(sec, force = False):
+    'time.sleep that abides by config rules'
+    if config.enable_pausing or force:
+        time.sleep(sec)
+
+def consoleLog(s):
+    'logging to console (print) that abides by config rules'
+    if config.enable_misc_logging:
+        print(s)

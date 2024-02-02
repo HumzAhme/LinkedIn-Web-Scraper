@@ -1,52 +1,11 @@
-from bs4 import BeautifulSoup, element
-import requests
 import time
-import re
-#from socket import error
 import json
 import os
 from datetime import datetime
+from config import config as CONFIG, debugger as DEBUG, consoleLog, pause
+from engine import getFreqDist
+from async_work import getJobIDsForListOfKeywords, getAllJobData
 
-from config import config as CONFIG, debugger as DEBUG
-from engine import getFreqDist, run_engine
-from terms import IGNORE, SAVE_WORDS 
-from async_work import getJobIDsForListOfKeywords
-
-class classNames:
-    title = 'topcard__title'
-
-    # body of the job description, including requirements and nice-to-haves
-    # strong tags indicate headers
-    # - might be useful to identify required skills vs nice-to-haves?
-    description = 'description__text'
-
-    # criteria list:
-    # first: seniority
-    # second: employment type (fulltime, contract, etc)
-    criteria = 'description__job-criteria-item'
-
-SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={0}'
-JOB_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'
-
-def pause(sec, force = False):
-    'time.sleep that abides by config rules'
-    if CONFIG.enable_pausing or force:
-        time.sleep(sec)
-
-def consoleLog(s):
-    'logging to console (print) that abides by config rules'
-    if CONFIG.enable_misc_logging:
-        print(s)
-
-def getSearchURL(keyword, start = 0, location = None):
-    'returns a URL for the job ID search HTTP request'
-    url = SEARCH_URL.format(keyword)
-
-    if (location != None):
-        url = url + '&location={}'.format(location)
-    
-    url = url + '&start={}'.format(start)
-    return url
 
 def scrapeLinkedIn(test_IDs = None):
     '''
@@ -131,7 +90,7 @@ def filterResults(data, jobCount):
         filtered.append(term)
     return filtered
 
-def mainWorkflow(jobIDs):
+def mainWorkflow(jobIDs: set[str]):
     'performs the main web scraping workflow and returns the data'
     (keywords_list, summary_info) = scrapeJobs(jobIDs)
 
@@ -142,234 +101,16 @@ def mainWorkflow(jobIDs):
 
     return (keywords_list, skipped_jobs)
 
-def scrapeJobs(jobIDs):
+def scrapeJobs(jobIDs: set[str]):
     'scrapes the data for the given jobIDs'
-    skippedJobs = set()
-    keywords_list = []
+    return getAllJobData(jobIDs)
 
-    data_included_count = 0
-    step = 0
-    time_avg = 0
-    begin = time.perf_counter()
-
-    for jobID in jobIDs:
-        step += 1
-        start = time.perf_counter()
-        jobData = getJobData(jobID)
-        time_avg += (time.perf_counter() - start)
-        if jobData[0] is False:
-            if (CONFIG.english_only and jobData[1] == 'non-english'):
-                if (CONFIG.debug_mode):
-                    print('non-english: {}'.format(jobID))
-                continue
-            if (CONFIG.debug_mode):
-                print('no job data found for [{}]'.format(jobID))
-                print('reason: {}'.format(jobData[1]))
-            skippedJobs.add(jobID)
-            continue
-        
-        keywords = jobData[1]
-        data_included_count += 1
-
-        # keywords
-        keywords_list = keywords_list + keywords
-
-        if (step % 10 == 0):
-            consoleLog('progress: {}% ({}/{})'.format(round(step/len(jobIDs)*100), step, len(jobIDs)))
-            elapsed = round(time.perf_counter() - begin)
-            consoleLog('time elapsed: {}s ({}m)'.format(elapsed,round(elapsed / 60)))
-    
-    if (time_avg > 0):
-        time_avg = round(time_avg / len(jobIDs) * 100) / 100
-        consoleLog('average time per job: {} seconds'.format(time_avg))
-    summary_info = (data_included_count, len(jobIDs), skippedJobs)
-    return (keywords_list, summary_info)
-
-def getJobIDs():
+def getJobIDs() -> set[str]:
     'gets job IDs for linked in job postings'
-
     keywords = CONFIG.keywords
     jobIDs = getJobIDsForListOfKeywords(keywords)
 
     return jobIDs
-
-def getJobData(jobID):
-    '''gets the data for a given job ID'''
-    consoleLog('current jobID: {}'.format(jobID))
-    retry = 0
-    max_retry = 2
-    fmtUrl = JOB_URL.format(jobID)
-    descriptionSection = None
-
-    # retry getting the job data if it fails
-    while ((descriptionSection == None) and (retry < max_retry)):
-        res = requestURL(fmtUrl)
-        # handle for if connection fails for some reason
-        if res[0] is False:
-            return res
-        soup = BeautifulSoup(res[1], 'html.parser')
-        descriptionSection = soup.find(class_=classNames.description)
-        retry += 1
-        if (descriptionSection == None):
-            consoleLog('failed to load job data - trying again')
-            pause(1, force=True)
-    if (descriptionSection == None):
-            #consoleLog(soup)
-            return (False, 'couldnt find description section')
-    
-    qualifications = getQualifications(descriptionSection)
-    return qualifications
-
-
-def requestURL(url):
-    'Try to fetch the URL, and handle if the connection fails'
-    headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
-    try:
-        res = requests.get(url, headers=headers, timeout=10)
-    except:
-        errmsg = 'connection error: Failed to connect to {}'.format(url)
-        if (CONFIG.debug_mode):
-            print(errmsg)
-        return (False, errmsg)
-    
-    return (True, res.text)
-
-
-def getQualifications(description):
-    'retrieves data from the description section of the job posting'
-    # clean the description of unwanted tags that might interfere
-    for e in description.findAll('br'):
-        e.extract()
-    for e in description.findAll('strong'):
-        e.extract()
-
-    # first try searching for list tags
-    tags = findListTags(description)
-    if tags == None:
-        tags = findPTags(description)
-    if tags == None:
-        return (False, 'No list or p tags could be found in description.')
-    
-    # if that fails, try searching for p tags
-    output = searchTags(tags)
-    return output
-
-
-def searchTags(tags):
-    'search the tags for text and parse out keywords.'
-    keyword_set = set()
-
-    # check bullet points for tech terms and other useful information
-    for tag in tags:
-        s = findString(tag)
-        if (s == None):
-            if (CONFIG.debug_mode):
-                print('empty tag?')
-                print(tag)
-                print('if there are any child tags, they should be removed or traversed.')
-            continue
-
-        if (CONFIG.english_only and isForeignScript(s)):
-            return (False, 'non-english')
-        
-        # find keywords
-        keywords = stripJunk(s)
-        keyword_set = keyword_set.union(keywords)
-    
-    return (True, list(keyword_set))
-
-def findListTags(description):
-    'finds <li> tags in the description'
-    ul_tag = description.find('ul')
-    if ul_tag == None:
-        return None
-    all_li = ul_tag.findAll('li')
-    return all_li
-    
-def findPTags(description):
-    'finds <p> tags in the description'
-    ptags = description.findAll('p')
-    return ptags
-
-def findString(tag):
-    'try to find a string in the given tag or its children'
-    s = tag.string
-    if (s != None):
-        return s
-    
-    # if there are children elements, look through them for strings
-    if (tag.children != None):
-        children = list(tag.children)
-        if len(children) >= 1:
-            # do search
-            s = ''
-            for child in children:
-                if type(child) == element.NavigableString:
-                    s += ' ' + child
-                if child.string != None:
-                    s += ' ' + child.string
-            return s
-    
-    # otherwise, try the next child - sometimes there are empty tags next to navigable strings (no clue why)
-    if type(tag.nextSibling) == "NavigableString":
-        return tag.nextSibling
-    return None
-    
-
-# strips all "junk" from an input string and returns the keywords in a set
-# expects some form of common language input.
-# ex: 
-# input ->  "preferred: deep understanding of python, javascript, and mySQL"
-# output -> {'python', 'javascript', 'mySQL'}
-def stripJunk(s):
-    'parses out keywords from a raw string'
-    if (s == None):
-        return set()
-    if (type(s) != element.NavigableString):
-        s = element.NavigableString(s)
-
-    # there must be at least some ascii characters, even if non-english
-    s = removeNonLatinText(s)
-    if len(s) == 0:
-        return set()
-    
-    output = run_engine(3, s)
-
-    # also use the term finder - on the unrestricted list of terms though
-    #if (CONFIG.debug_mode and DEBUG.find_terms):
-    #    intersect = DEBUG.find_list.intersection(set(allTheWords))
-    #    if len(intersect) > 0:
-    #        print('Found find_list terms!')
-    #        print(intersect)
-    #        print(s)
-    #        writeToLog(str(intersect))
-    #        writeToLog(s)
-    return output
-
-def removeNonLatinText(s):
-    'removes all characters from non-latin scripts (such as Japanese, Arabic, etc)'
-    stripStr = re.sub("[^0-9a-zA-Z,.'+#&*-]",'_', s) # replaces all non alphanumeric (or not ,.) with _
-    cleanStr = ''
-    lastChar = ''
-    for ch in stripStr:
-        # when a word switches to _, add a space
-        if lastChar != '_':
-            if ch == '_':
-                cleanStr += ' '
-        if ch != '_':
-            cleanStr += ch
-        lastChar = ch
-    return cleanStr.strip()
-
-def isForeignScript(s):
-    'detects if the given string is a foreign script or not (non-ascii characters)'
-    original_length = len(s)
-    stripStr = removeNonLatinText(s)
-
-    # if > 50% of the string is comprised of non-ascii characters, it's probably not english.
-    if (len(stripStr) < (original_length / 2)):
-        return True
-    return False
 
 def summarizeResults(freq_keywords, data_included = 0, len_data = 0):
     'shows data gathered from scraping linkedIn, and also displays a summary information of jobs skipped'
@@ -404,36 +145,3 @@ def writeToJSON(data, filename):
 def writeToLog(s):
     with open('log.txt', 'a') as f:
         f.write('\n'.join(s))
-
-# functions for testing stuff
-
-def testJob(jobID):
-    'test getting data from a given jobID'
-    jobData = getJobData(jobID)
-    print(jobData)
-
-def testSentence(sentence):
-    'test getting keywords from a given sentence string'
-    print(sentence)
-    print(stripJunk(element.NavigableString(sentence)))
-
-def manualFindIgnore(word_list):
-    '''
-    function to help you go through the output keywords and mark new ignore terms.
-    input the list/set of keywords output from a the search summary and go through each, deciding if it should be ignored or not.
-    '''
-    ignore_add = set()
-    for (word, freq) in word_list:
-        if word.lower() in SAVE_WORDS:
-            continue
-        if word.lower() in IGNORE:
-            continue
-        print('{}: {}'.format(word, freq))
-        ans = input('add to ignore? (y/n/x): ')
-        if ans.lower() == 'y':
-            ignore_add.add(word)
-        if ans.lower() == 'x':
-            break
-    print('new ignore set: ')
-    newIgnore = ignore_add.union(IGNORE)
-    print(newIgnore)
