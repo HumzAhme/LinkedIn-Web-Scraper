@@ -9,6 +9,7 @@ requests = "*"
 nltk = "*"
 google-cloud-storage = "*"
 spacy = "*"
+aiohttp = "*"
 
 [dev-packages]
 

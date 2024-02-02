@@ -9,8 +9,8 @@ from datetime import datetime
 
 from config import config as CONFIG, debugger as DEBUG
 from engine import getFreqDist, run_engine
-from terms import IGNORE, SAVE_WORDS
-
+from terms import IGNORE, SAVE_WORDS 
+from async_work import getJobIDsForListOfKeywords
 
 class classNames:
     title = 'topcard__title'
@@ -185,66 +185,12 @@ def scrapeJobs(jobIDs):
     summary_info = (data_included_count, len(jobIDs), skippedJobs)
     return (keywords_list, summary_info)
 
-
-
 def getJobIDs():
     'gets job IDs for linked in job postings'
 
-    jobIDs = set()
+    keywords = CONFIG.keywords
+    jobIDs = getJobIDsForListOfKeywords(keywords)
 
-    for keyword in CONFIG.keywords:
-        done = False
-        i = 0
-        consoleLog("Getting job IDs for '{}'".format(keyword))
-
-        # number of attempts to reload a URL
-        attempts = 0
-        max_attempts = 5
-
-        while not done:
-            #load each page of results, and get all the job IDs from it
-            fmtUrl = getSearchURL(keyword, i, CONFIG.location)
-            consoleLog('jobs found: {}'.format(len(jobIDs)))
-            consoleLog('fetching job IDs from linkedIn at: {}'.format(fmtUrl))
-            res = requestURL(fmtUrl)
-            # handle for if connection fails for some reason
-            if res[0] is False:
-                attempts += 1
-                continue
-            soup = BeautifulSoup(res[1], 'html.parser')
-
-            jobDivs = soup.find_all(class_='base-card')
-
-            # no jobs are found?
-            if (len(jobDivs) == 0):
-                # if the URL returned nothing, try reloading it again a few times
-                if (attempts < max_attempts):
-                    attempts += 1
-                    consoleLog('retrying jobIDs url: attempt {}'.format(attempts))
-                    pause(1, force=True)
-                    continue
-                done = True
-                break
-            # reset attempts if we succeed in getting a valid URL
-            if (attempts > 0):
-                consoleLog('succeeded in getting url finally! ({} attempts)'.format(attempts))
-                attempts = 0
-
-            for div in jobDivs:
-                jobID = div.get('data-entity-urn').split(":")[3]
-                jobIDs.add(jobID)
-            
-            if (CONFIG.test_run):
-                if len(jobIDs) >= 300:
-                    break
-            i = i + 25 # 25 jobs per results page
-
-        if (CONFIG.test_run):
-            if len(jobIDs) >= 300:
-                break
-
-    if (CONFIG.debug_mode):
-        print(jobIDs)
     return jobIDs
 
 def getJobData(jobID):
