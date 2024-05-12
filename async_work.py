@@ -173,7 +173,13 @@ async def getJobDataAsync(jobIDs: set[str]):
     # split the jobIDs into chunks according to our number of workers
     numWorkers = 4
     chunkSize = len(jobIDsList) // numWorkers
-    chunks = [jobIDsList[i:i+chunkSize] for i in range(0, len(jobIDsList), chunkSize)]
+    if chunkSize > 0:
+        chunks = [jobIDsList[i:i+chunkSize] for i in range(0, len(jobIDsList), chunkSize)]
+    else:
+        # Handle the case where chunkSize is zero, perhaps by setting a default value
+        chunkSize = 100  # Example default value
+        chunks = [jobIDsList[i:i+chunkSize] for i in range(0, len(jobIDsList), chunkSize)]
+
     tasks = []
     for i, chunk in enumerate(chunks):
         task = asyncio.create_task(scrapeJobsWorker(chunk, i + 1))
