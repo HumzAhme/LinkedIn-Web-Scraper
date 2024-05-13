@@ -2,6 +2,8 @@ import time
 import asyncio
 from parsing import parseJobIDsFromPage, getJobData
 from request_url import getSearchURL, requestUrl
+from typing import List, Optional
+
 
 ITER = 3
     
@@ -71,7 +73,8 @@ async def getJobIDsSync(keyword: str):
     return jobIDs
 
 
-async def getJobIDsFromURLs(URLs: list[str], workerID: int | None = None):
+async def getJobIDsFromURLs(URLs: list[str], workerID: int | None = None): # '|' (pipe) is only workable/recognized for python 3.10 and above. if this doesn't work, add instead:
+                                                                           # async def getJobIDsFromURLs(URLs: List[str], workerID: Optional[int] = None):
     '''
     Takes a list of job search URLs and attempts to find job IDs from each.
 
